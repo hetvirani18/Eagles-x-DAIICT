@@ -1,0 +1,72 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Backend Server",
+			"type": "shell",
+			"command": "npm",
+			"args": ["run", "dev"],
+			"options": {
+				"cwd": "${workspaceFolder}/backend"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Frontend Server",
+			"type": "shell",
+			"command": "npm",
+			"args": ["run", "dev"],
+			"options": {
+				"cwd": "${workspaceFolder}/frontend"
+			},
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Seed Database",
+			"type": "shell",
+			"command": "npm",
+			"args": ["run", "seed"],
+			"options": {
+				"cwd": "${workspaceFolder}/backend"
+			},
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": true,
+				"clear": false
+			}
+		},
+		{
+			"label": "Start Full Stack",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"Start Backend Server",
+				"Start Frontend Server"
+			],
+			"group": "build"
+		}
+	]
+}
