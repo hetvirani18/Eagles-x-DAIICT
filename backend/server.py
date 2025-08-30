@@ -201,7 +201,7 @@ async def calculate_optimal_locations(
                 location = LocationPoint(latitude=lat, longitude=lng)
                 analysis = await optimizer.analyze_location(location, weights)
                 
-                if analysis['overall_score'] > 200:  # Only include good locations
+                if analysis['overall_score'] > 70:  # Only include good locations (70/100 or better)
                     optimal_locations.append(analysis)
         
         # Sort by score and return top results
@@ -219,7 +219,7 @@ async def get_pre_calculated_optimal_locations():
     pre_calculated = [
         {
             "location": {"latitude": 21.6500, "longitude": 72.8500},
-            "overall_score": 285.4,
+            "overall_score": 91.2,
             "energy_score": 88.2,
             "demand_score": 92.1,
             "water_score": 78.5,
@@ -262,7 +262,7 @@ async def get_pre_calculated_optimal_locations():
         },
         {
             "location": {"latitude": 22.9200, "longitude": 70.8500},
-            "overall_score": 278.1,
+            "overall_score": 87.3,
             "energy_score": 91.5,
             "demand_score": 75.8,
             "water_score": 68.2,
@@ -305,7 +305,7 @@ async def get_pre_calculated_optimal_locations():
         },
         {
             "location": {"latitude": 22.7800, "longitude": 69.8200},
-            "overall_score": 272.3,
+            "overall_score": 85.4,
             "energy_score": 95.8,
             "demand_score": 88.1,
             "water_score": 55.2,
@@ -348,7 +348,7 @@ async def get_pre_calculated_optimal_locations():
         },
         {
             "location": {"latitude": 21.4000, "longitude": 72.6800},
-            "overall_score": 265.7,
+            "overall_score": 83.2,
             "energy_score": 72.4,
             "demand_score": 94.8,
             "water_score": 81.5,
@@ -391,7 +391,7 @@ async def get_pre_calculated_optimal_locations():
         },
         {
             "location": {"latitude": 23.1500, "longitude": 72.2200},
-            "overall_score": 258.9,
+            "overall_score": 80.6,
             "energy_score": 68.5,
             "demand_score": 79.8,
             "water_score": 88.2,

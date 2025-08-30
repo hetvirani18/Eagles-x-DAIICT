@@ -360,26 +360,31 @@ class HydrogenLocationOptimizer:
                 # Fallback to simple calculation
                 pass
         
-        # Fallback: Simple calculation based on score
+        # Fallback: Simple calculation based on score (now properly scaled 0-100)
         base_cost = 350  # Base cost per kg in INR
         base_capacity = 15000  # Base capacity in MT/year
         
         # Cost reduction factors based on infrastructure quality
-        if overall_score > 250:
-            cost_reduction = (overall_score - 200) / 100 * 80  # Up to 80 INR reduction
+        if overall_score > 80:  # Top 20% performance
+            # Linear cost reduction: up to 80 INR reduction for perfect score
+            cost_reduction = (overall_score - 80) * 4  # Up to 80 INR reduction for score=100
             base_cost = max(200, base_cost - cost_reduction)
             
-        # Capacity increase factors  
-        if overall_score > 200:
-            capacity_multiplier = 1 + (overall_score - 200) / 200
-            base_capacity = int(base_capacity * capacity_multiplier)
+        # Capacity increase factors - linear relationship with score
+        capacity_multiplier = 0.5 + (overall_score / 100)  # 0.5x to 1.5x capacity based on score
+        base_capacity = int(base_capacity * capacity_multiplier)
+            
+        # Calculate ROI and payback periods based on 0-100 score
+        # Linear relationships with better economic outcomes as score increases
+        payback_period = 12 - (overall_score / 100 * 7)  # 5-12 years
+        roi_percentage = 10 + (overall_score / 100 * 20)  # 10-30%
             
         return {
             'capacity_kg_day': base_capacity * 1000 / 330,  # Convert to kg/day
             'annual_capacity_mt': base_capacity,
             'projected_cost_per_kg': round(base_cost, 2),
-            'payback_period_years': max(5, 12 - (overall_score - 200) / 50),
-            'roi_percentage': min(30, max(10, (overall_score - 150) / 10)),
+            'payback_period_years': round(payback_period, 1),
+            'roi_percentage': round(roi_percentage, 1),
             'simplified_calculation': True
         }
     
@@ -420,7 +425,7 @@ class HydrogenLocationOptimizer:
             water_sources[0] if water_sources else None
         )
         
-        # Enhanced weighted overall score (now includes economic viability)
+        # Enhanced weighted overall score (normalized to 0-100 scale)
         infrastructure_score = (
             energy_score * weights.energy_weight +
             demand_score * weights.demand_weight + 
@@ -429,7 +434,19 @@ class HydrogenLocationOptimizer:
             transport_score * weights.transport_weight
         )
         
-        # Final score combines infrastructure (70%) and economics (30%)
+        # Normalize infrastructure score to 0-100 scale
+        # The sum of weights should be 1.0, so normalize accordingly
+        weight_sum = (weights.energy_weight + weights.demand_weight + 
+                     weights.water_weight + weights.pipeline_weight + 
+                     weights.transport_weight)
+        
+        if weight_sum > 0:
+            infrastructure_score = infrastructure_score / weight_sum
+        
+        # Cap at 100 to ensure consistent scale
+        infrastructure_score = min(100, infrastructure_score)
+        
+        # Final score combines infrastructure (70%) and economics (30%) on 0-100 scale
         overall_score = (infrastructure_score * 0.70) + (economic_score * 0.30)
         
         # Production metrics with economic analysis
