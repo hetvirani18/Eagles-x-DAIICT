@@ -14,6 +14,9 @@ from models import *
 from database import connect_to_mongo, close_mongo_connection, get_database
 from services.algorithm import HydrogenLocationOptimizer
 
+# Import advanced analysis routes
+from advanced_analysis_routes import router as advanced_analysis_router
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -433,8 +436,9 @@ async def get_pre_calculated_optimal_locations():
     
     return pre_calculated
 
-# Include the router in the main app
+# Include the routers in the main app
 app.include_router(api_router)
+app.include_router(advanced_analysis_router)
 
 # CORS middleware
 app.add_middleware(

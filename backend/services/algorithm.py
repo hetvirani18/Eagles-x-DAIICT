@@ -5,13 +5,16 @@ from models import (
     WaterSource, GasPipeline, RoadNetwork, WaterBody, WeightedAnalysisRequest
 )
 from database import get_database
-from .economic_calculator import EnhancedEconomicCalculator
+from .investor_economics import run_investor_grade_analysis
+from .dynamic_production_calculator import analyze_location_production_potential
+# Temporarily comment out problematic import
+# from .interactive_investment_tools import run_complete_investment_analysis
+import math
 import asyncio
 
 class HydrogenLocationOptimizer:
     def __init__(self):
         self.db = get_database()
-        self.economic_calculator = EnhancedEconomicCalculator()
         
     def calculate_distance(self, point1: LocationPoint, point2: LocationPoint) -> float:
         """Calculate distance between two points using Haversine formula"""
@@ -174,132 +177,92 @@ class HydrogenLocationOptimizer:
             'connectivity_score': nearest_road.connectivity_score if nearest_road else None
         }
 
-    async def calculate_economic_viability_score(self, location: LocationPoint,
+    def calculate_economic_viability_score(self, location: dict,
                                                nearest_energy: EnergySource = None,
                                                nearest_demand: DemandCenter = None,
                                                nearest_water: WaterSource = None) -> Tuple[float, dict]:
-        """Calculate economic viability score based on financial metrics"""
+        """Calculate economic viability score based on comprehensive financial analysis"""
         
         if not (nearest_energy and nearest_demand and nearest_water):
             # Fallback to simple economic estimation
             return 50, {'simplified': True, 'message': 'Limited data for full economic analysis'}
         
         try:
-            # Calculate economics for optimal plant size (1000 kg/day)
-            analysis = self.economic_calculator.calculate_comprehensive_economics(
-                location, nearest_energy, nearest_demand, nearest_water, 1000
+            lat, lng = location['lat'], location['lng']
+            capacity_mw = 50  # Default 50 MW capacity
+            electricity_price = nearest_energy.electricity_rate_per_kwh if nearest_energy else 3.5
+            hydrogen_price = 350  # ₹350/kg default
+            
+            # Use investor-grade economic analysis
+            investor_analysis = run_investor_grade_analysis(
+                location=(lat, lng),
+                capacity_mw=capacity_mw,
+                electricity_price=electricity_price,
+                hydrogen_price=hydrogen_price
             )
             
-            # Economic scoring factors (0-100 each)
+            economics_score = investor_analysis.overall_investment_score
+            roi = investor_analysis.roi_percentage
+            payback = investor_analysis.payback_period_years
             
-            # 1. ROI Score (0-100) - Higher ROI = better score
-            roi_score = 0
-            if analysis.roi_percentage > 0:
-                if analysis.roi_percentage >= 25:
-                    roi_score = 100
-                elif analysis.roi_percentage >= 20:
-                    roi_score = 90
-                elif analysis.roi_percentage >= 15:
-                    roi_score = 75
-                elif analysis.roi_percentage >= 10:
-                    roi_score = 50
-                elif analysis.roi_percentage >= 5:
-                    roi_score = 25
-                else:
-                    roi_score = 10
-            
-            # 2. Payback Period Score (0-100) - Shorter payback = better score
-            payback_score = 0
-            if analysis.payback_period_years > 0:
-                if analysis.payback_period_years <= 4:
-                    payback_score = 100
-                elif analysis.payback_period_years <= 6:
-                    payback_score = 80
-                elif analysis.payback_period_years <= 8:
-                    payback_score = 60
-                elif analysis.payback_period_years <= 10:
-                    payback_score = 40
-                elif analysis.payback_period_years <= 12:
-                    payback_score = 20
-                else:
-                    payback_score = 5
-            
-            # 3. Production Cost Score (0-100) - Lower cost = better score
-            cost_score = 0
-            if analysis.hydrogen_selling_price_per_kg > 0:
-                if analysis.hydrogen_selling_price_per_kg <= 250:
-                    cost_score = 100
-                elif analysis.hydrogen_selling_price_per_kg <= 300:
-                    cost_score = 80
-                elif analysis.hydrogen_selling_price_per_kg <= 350:
-                    cost_score = 60
-                elif analysis.hydrogen_selling_price_per_kg <= 400:
-                    cost_score = 40
-                elif analysis.hydrogen_selling_price_per_kg <= 450:
-                    cost_score = 20
-                else:
-                    cost_score = 5
-            
-            # 4. NPV Score (0-100) - Higher NPV = better score
-            npv_score = 0
-            if analysis.npv_10_years > 0:
-                npv_crores = analysis.npv_10_years / 1_00_00_000
-                if npv_crores >= 20:
-                    npv_score = 100
-                elif npv_crores >= 15:
-                    npv_score = 85
-                elif npv_crores >= 10:
-                    npv_score = 70
-                elif npv_crores >= 5:
-                    npv_score = 50
-                elif npv_crores >= 1:
-                    npv_score = 30
-                else:
-                    npv_score = 10
-            
-            # 5. Profit Margin Score (0-100)
-            profit_margin = (analysis.annual_profit / analysis.annual_revenue) * 100 if analysis.annual_revenue > 0 else 0
-            margin_score = 0
-            if profit_margin >= 40:
-                margin_score = 100
-            elif profit_margin >= 30:
-                margin_score = 80
-            elif profit_margin >= 20:
-                margin_score = 60
-            elif profit_margin >= 10:
-                margin_score = 40
-            elif profit_margin >= 5:
-                margin_score = 20
-            else:
-                margin_score = 5
-            
-            # Weighted combination of economic factors
-            economic_score = (
-                roi_score * 0.25 +          # 25% weight on ROI
-                payback_score * 0.25 +      # 25% weight on payback
-                cost_score * 0.20 +         # 20% weight on production cost
-                npv_score * 0.15 +          # 15% weight on NPV
-                margin_score * 0.15         # 15% weight on profit margin
-            )
-            
-            return economic_score, {
-                'roi_percentage': analysis.roi_percentage,
-                'roi_score': roi_score,
-                'payback_years': analysis.payback_period_years,
-                'payback_score': payback_score,
-                'production_cost_per_kg': analysis.hydrogen_selling_price_per_kg,
-                'cost_score': cost_score,
-                'npv_10_years_crores': analysis.npv_10_years / 1_00_00_000,
-                'npv_score': npv_score,
-                'profit_margin_percentage': profit_margin,
-                'margin_score': margin_score,
-                'overall_economic_score': economic_score,
-                'economic_grade': self._get_economic_grade(economic_score)
+            # Create detailed economic analysis
+            economic_details = {
+                'investment_grade': investor_analysis.investment_grade,
+                'roi_percentage': roi,
+                'payback_period_years': payback,
+                'npv_crores': investor_analysis.npv_10_years,
+                'total_capex': investor_analysis.total_capex,
+                'annual_opex': investor_analysis.total_annual_opex,
+                'hydrogen_price_per_kg': hydrogen_price,
+                'electricity_cost_per_kwh': electricity_price,
+                'economic_grade': self._get_economic_grade(economics_score),
+                'annual_production_tonnes': investor_analysis.annual_production_tonnes,
+                'capacity_utilization': investor_analysis.capacity_utilization,
+                'profitability_analysis': {
+                    'break_even_years': payback,
+                    'annual_profit_projection': investor_analysis.annual_revenue - investor_analysis.total_annual_opex,
+                    'profit_margin_percentage': ((investor_analysis.annual_revenue - investor_analysis.total_annual_opex) / investor_analysis.annual_revenue * 100) if investor_analysis.annual_revenue > 0 else 0
+                }
             }
             
+            return min(100, max(0, economics_score)), economic_details
+            
         except Exception as e:
-            print(f"Economic viability calculation failed: {e}")
-            return 30, {'error': str(e), 'fallback': True}
+            print(f"Error in economic analysis: {e}")
+            # Fallback calculation
+            basic_score = self._calculate_basic_economic_score(nearest_energy, nearest_demand, nearest_water)
+            return basic_score, {'simplified': True, 'error': str(e)}
+    
+    def _calculate_basic_economic_score(self, energy: EnergySource, demand: DemandCenter, water: WaterSource) -> float:
+        """Basic economic scoring when detailed analysis fails"""
+        score = 50  # Base score
+        
+        if energy and energy.electricity_rate_per_kwh:
+            # Lower electricity cost = higher score
+            if energy.electricity_rate_per_kwh <= 2.5:
+                score += 20
+            elif energy.electricity_rate_per_kwh <= 3.5:
+                score += 10
+            elif energy.electricity_rate_per_kwh >= 5.0:
+                score -= 10
+        
+        if demand and demand.annual_demand_tonnes:
+            # Higher demand = higher score
+            if demand.annual_demand_tonnes >= 5000:
+                score += 15
+            elif demand.annual_demand_tonnes >= 1000:
+                score += 10
+            elif demand.annual_demand_tonnes >= 500:
+                score += 5
+        
+        if water and water.water_quality_index:
+            # Better water quality = higher score
+            if water.water_quality_index >= 80:
+                score += 10
+            elif water.water_quality_index >= 60:
+                score += 5
+        
+        return min(100, max(0, score))
     
     def _get_economic_grade(self, score: float) -> str:
         """Convert economic score to letter grade"""
@@ -326,54 +289,71 @@ class HydrogenLocationOptimizer:
                                          nearest_water: WaterSource = None) -> dict:
         """Calculate detailed production cost and capacity with economic analysis"""
         
-        # If we have actual infrastructure data, use detailed economic calculation
+        # If we have actual infrastructure data, use dynamic production calculation
         if nearest_energy and nearest_demand and nearest_water:
             try:
-                # Calculate for different plant capacities
-                capacities = [500, 1000, 2000]  # kg/day
-                economic_analyses = {}
+                # Get actual resource availability
+                electricity_mw = getattr(nearest_energy, 'capacity_mw', 50.0)
+                electricity_price = getattr(nearest_energy, 'electricity_rate_per_kwh', 3.5)
+                water_supply_lph = getattr(nearest_water, 'flow_rate_lph', 50000)
+                total_demand_kg_day = getattr(nearest_demand, 'hydrogen_demand_kg_day', 1000)
                 
-                for capacity in capacities:
-                    analysis = self.economic_calculator.calculate_comprehensive_economics(
-                        location, nearest_energy, nearest_demand, nearest_water, capacity
-                    )
+                # Calculate land price based on location
+                distance_to_city = energy_info.get('distance_km', 50)
+                if distance_to_city < 20:
+                    land_price_per_acre_cr = 2.5  # Urban
+                elif distance_to_city < 50:
+                    land_price_per_acre_cr = 1.8  # Semi-urban
+                else:
+                    land_price_per_acre_cr = 1.2  # Rural
+                
+                # Run dynamic production analysis
+                production_analysis = analyze_location_production_potential(
+                    electricity_mw=electricity_mw,
+                    electricity_price=electricity_price,
+                    water_supply_lph=water_supply_lph,
+                    total_demand_kg_day=total_demand_kg_day,
+                    land_available_acres=10,
+                    land_price_per_acre_cr=land_price_per_acre_cr
+                )
+                
+                # Get recommended scenario
+                recommended = production_analysis.get('recommended_scenario')
+                if recommended:
+                    scenario = recommended['scenario']
                     
-                    economic_analyses[f"{capacity}_kg_day"] = {
-                        'capacity_kg_day': capacity,
-                        'annual_capacity_mt': capacity * 330 / 1000,  # 330 operating days
-                        'capex_crores': analysis.total_capex / 1_00_00_000,
-                        'opex_annual_crores': analysis.total_opex_annual / 1_00_00_000,
-                        'revenue_annual_crores': analysis.annual_revenue / 1_00_00_000,
-                        'profit_annual_crores': analysis.annual_profit / 1_00_00_000,
-                        'projected_cost_per_kg': analysis.hydrogen_selling_price_per_kg,
-                        'roi_percentage': analysis.roi_percentage,
-                        'payback_period_years': analysis.payback_period_years,
-                        'npv_10_years_crores': analysis.npv_10_years / 1_00_00_000,
-                        'irr_percentage': analysis.irr_percentage,
-                        
-                        # Cost breakdown
-                        'cost_breakdown': {
-                            'electricity_cost_annual': analysis.electricity_cost_annual,
-                            'water_cost_annual': analysis.water_cost_annual,
-                            'labor_cost_annual': analysis.labor_cost_annual,
-                            'maintenance_cost_annual': analysis.maintenance_cost_annual,
-                            'transportation_cost_annual': analysis.transportation_cost_annual
-                        },
-                        
-                        # Investment breakdown
-                        'investment_breakdown': {
-                            'plant_construction': analysis.plant_construction_cost,
-                            'electrolyzer_cost': analysis.electrolyzer_cost,
-                            'infrastructure_cost': analysis.infrastructure_cost,
-                            'land_acquisition': analysis.land_acquisition_cost
-                        }
+                    return {
+                        'capacity_kg_day': scenario.capacity_kg_day,
+                        'annual_capacity_mt': scenario.annual_production_tonnes,
+                        'projected_cost_per_kg': 350,
+                        'electricity_required_mw': scenario.electricity_required_mw,
+                        'water_required_lph': scenario.water_required_lph,
+                        'land_required_acres': scenario.land_required_acres,
+                        'capex_crores': scenario.capex_crores,
+                        'opex_annual_crores': scenario.opex_annual_crores,
+                        'revenue_annual_crores': scenario.revenue_annual_crores,
+                        'profit_annual_crores': scenario.profit_annual_crores,
+                        'roi_percentage': scenario.roi_percentage,
+                        'payback_period_years': scenario.payback_years,
+                        'market_share_percentage': scenario.market_share_percentage,
+                        'demand_fulfillment_ratio': scenario.demand_fulfillment_ratio,
+                        'limiting_factor': production_analysis['resource_constraints']['limiting_factor'],
+                        'electricity_utilization_percent': production_analysis['resource_constraints']['electricity_utilization_percent'],
+                        'water_utilization_percent': production_analysis['resource_constraints']['water_utilization_percent'],
+                        'investment_grade': self.get_investment_grade(scenario.roi_percentage, scenario.payback_years),
+                        'risk_assessment': recommended['risk_level'],
+                        'scenario_name': recommended['name'],
+                        'unmet_demand_kg_day': production_analysis['market_analysis']['unmet_demand_kg_day'],
+                        'alternative_scenarios': [
+                            {
+                                'name': s['name'],
+                                'capacity_kg_day': s['scenario'].capacity_kg_day,
+                                'capex_crores': s['scenario'].capex_crores,
+                                'roi_percentage': s['scenario'].roi_percentage,
+                                'risk_level': s['risk_level']
+                            } for s in production_analysis['scenarios']
+                        ]
                     }
-                
-                # Return the most economically viable option
-                best_option = min(economic_analyses.values(), 
-                                key=lambda x: x['payback_period_years'] if x['roi_percentage'] > 15 else float('inf'))
-                
-                return best_option
                 
             except Exception as e:
                 print(f"Economic calculation failed: {e}")

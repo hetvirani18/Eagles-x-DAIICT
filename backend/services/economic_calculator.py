@@ -4,99 +4,283 @@ from dataclasses import dataclass
 from models import LocationPoint, EnergySource, DemandCenter, WaterSource
 
 @dataclass
-class EconomicAnalysis:
-    """Comprehensive economic analysis for hydrogen plant"""
-    # Capital Costs
-    plant_construction_cost: float
-    electrolyzer_cost: float
-    infrastructure_cost: float
-    land_acquisition_cost: float
+class DetailedInvestmentBreakdown:
+    """Ultra-detailed investment breakdown for investors"""
+    # CAPEX - Equipment Costs (₹ Crores)
+    electrolyzer_stack_cost: float
+    electrolyzer_power_supply: float
+    electrolyzer_control_system: float
+    compression_system: float
+    storage_tanks: float
+    purification_equipment: float
+    safety_systems: float
+    
+    # CAPEX - Infrastructure (₹ Crores)
+    plant_construction: float
+    electrical_infrastructure: float
+    water_treatment_plant: float
+    hydrogen_pipeline_connection: float
+    road_access_development: float
+    utility_connections: float
+    
+    # CAPEX - Land & Permits (₹ Crores)
+    land_acquisition: float
+    environmental_clearance: float
+    regulatory_permits: float
+    
+    # CAPEX - Project Development (₹ Crores)
+    engineering_design: float
+    project_management: float
+    commissioning_testing: float
+    contingency_reserve: float
+    
+    # OPEX - Production Costs (₹ Crores/year)
+    electricity_costs: float
+    water_costs: float
+    raw_material_costs: float
+    
+    # OPEX - Operations (₹ Crores/year)
+    skilled_operators: float
+    maintenance_technicians: float
+    engineering_staff: float
+    administrative_staff: float
+    
+    # OPEX - Maintenance (₹ Crores/year)
+    electrolyzer_maintenance: float
+    equipment_replacement: float
+    facility_maintenance: float
+    
+    # OPEX - Business (₹ Crores/year)
+    insurance_costs: float
+    transportation_logistics: float
+    marketing_sales: float
+    regulatory_compliance: float
+    
+    # Financial Analysis
     total_capex: float
+    total_annual_opex: float
     
-    # Operating Costs (Annual)
-    electricity_cost_annual: float
-    water_cost_annual: float
-    labor_cost_annual: float
-    maintenance_cost_annual: float
-    transportation_cost_annual: float
-    total_opex_annual: float
-    
-    # Revenue
-    hydrogen_production_kg_day: float
+    # Production & Revenue
+    daily_production_kg: float
+    annual_production_tonnes: float
     hydrogen_selling_price_per_kg: float
     annual_revenue: float
-    
-    # Financial Metrics
     annual_profit: float
+    
+    # Investment Metrics
     roi_percentage: float
     payback_period_years: float
     npv_10_years: float
     irr_percentage: float
+    debt_equity_ratio: float
+    interest_coverage_ratio: float
+    
+    # Market Analysis
+    market_demand_local_tonnes: float
+    market_price_volatility: float
+    competition_analysis: str
+    regulatory_risk_score: float
 
-class EnhancedEconomicCalculator:
+@dataclass
+class LocationSpecificFactors:
+    """Location-specific cost modifiers"""
+    zone_type: str  # Industrial, SEZ, Rural, Coastal, Port
+    power_grid_distance_km: float
+    water_source_distance_km: float
+    pipeline_distance_km: float
+    transport_connectivity_score: float
+    labor_availability_score: float
+    regulatory_zone: str
+    environmental_sensitivity: str
+
+class InvestorGradeEconomicCalculator:
     def __init__(self):
-        # Base costs in INR
-        self.base_electrolyzer_cost_per_mw = 4_00_00_000  # ₹4 crores per MW
-        self.base_construction_cost_per_kg_day = 15_00_000  # ₹15 lakhs per kg/day capacity
-        self.land_cost_per_acre = {
-            'industrial': 50_00_000,  # ₹50 lakhs/acre
-            'agricultural': 20_00_000,  # ₹20 lakhs/acre
-            'barren': 10_00_000,      # ₹10 lakhs/acre
+        # Real market costs (2025 prices in ₹)
+        self.equipment_costs = {
+            # Electrolyzer (per MW capacity)
+            'alkaline_electrolyzer_per_mw': 6_50_00_000,  # ₹6.5 Cr/MW
+            'pem_electrolyzer_per_mw': 8_50_00_000,       # ₹8.5 Cr/MW (higher efficiency)
+            'solid_oxide_per_mw': 12_00_00_000,           # ₹12 Cr/MW (emerging tech)
+            
+            # Power supply & control (% of electrolyzer cost)
+            'power_supply_percentage': 15,
+            'control_system_percentage': 8,
+            
+            # Compression & Storage
+            'compressor_350bar_per_kg_day': 25_000,       # ₹25k per kg/day capacity
+            'compressor_700bar_per_kg_day': 45_000,       # ₹45k per kg/day capacity
+            'storage_tank_per_kg': 8_000,                 # ₹8k per kg storage
+            
+            # Purification & Safety
+            'purification_system_base': 1_20_00_000,      # ₹1.2 Cr base cost
+            'safety_systems_base': 80_00_000,             # ₹80 lakh base cost
         }
         
-        # Operating parameters
-        self.electricity_requirement_kwh_per_kg_h2 = 55  # kWh per kg H2
-        self.water_requirement_liters_per_kg_h2 = 9     # Liters per kg H2
-        self.plant_efficiency = 0.65  # 65% efficiency
+        self.infrastructure_costs = {
+            # Construction (per kg/day capacity)
+            'plant_building_per_kg_day': 12_000,          # ₹12k per kg/day
+            'electrical_infrastructure_per_mw': 35_00_000,  # ₹35 lakh per MW
+            'water_treatment_base': 2_50_00_000,          # ₹2.5 Cr base cost
+            
+            # Connectivity costs
+            'pipeline_connection_per_km': 15_00_000,      # ₹15 lakh per km
+            'road_development_per_km': 8_00_000,          # ₹8 lakh per km
+            'electrical_connection_per_km': 12_00_000,    # ₹12 lakh per km
+        }
+        
+        self.land_costs = {
+            # Land acquisition (per acre)
+            'Industrial Zone': 60_00_000,   # ₹60 lakh/acre
+            'SEZ': 80_00_000,               # ₹80 lakh/acre  
+            'Rural': 15_00_000,             # ₹15 lakh/acre
+            'Coastal': 45_00_000,           # ₹45 lakh/acre
+            'Port Area': 1_00_00_000,       # ₹1 Cr/acre
+        }
+        
+        self.operational_costs = {
+            # Electricity (₹/kWh by source)
+            'grid_electricity': 4.2,         # ₹4.2/kWh (industrial rate)
+            'solar_direct': 2.8,             # ₹2.8/kWh (direct solar)
+            'wind_direct': 3.1,              # ₹3.1/kWh (direct wind)
+            'hybrid_renewable': 2.9,         # ₹2.9/kWh (solar+wind)
+            
+            # Water costs (₹/liter)
+            'municipal_water': 0.8,          # ₹0.8/liter
+            'groundwater': 0.3,              # ₹0.3/liter
+            'treated_wastewater': 0.5,       # ₹0.5/liter
+            'desalinated_water': 1.2,        # ₹1.2/liter
+            
+            # Staffing (Annual salaries in ₹)
+            'plant_manager': 18_00_000,      # ₹18 lakh/year
+            'shift_operators': 8_00_000,     # ₹8 lakh/year each
+            'maintenance_engineer': 12_00_000, # ₹12 lakh/year
+            'technicians': 6_00_000,         # ₹6 lakh/year each
+            'safety_officer': 10_00_000,     # ₹10 lakh/year
+            'administrative': 5_00_000,      # ₹5 lakh/year each
+        }
+        
+        # Production parameters
+        self.production_efficiency = {
+            'electrolyzer_efficiency': 0.68,              # 68% electrical efficiency
+            'kwh_per_kg_h2': 52,                         # kWh per kg H2 (efficient)
+            'water_consumption_liters_per_kg': 9,        # 9L per kg H2
+            'capacity_factor': 0.85,                     # 85% uptime
+        }
+        
+        # Market parameters (Gujarat 2025)
+        self.market_data = {
+            'hydrogen_price_industrial': 280,            # ₹280/kg (industrial)
+            'hydrogen_price_transport': 350,             # ₹350/kg (transport)
+            'hydrogen_price_export': 320,                # ₹320/kg (export)
+            'price_escalation_annual': 0.06,             # 6% annual price increase
+            'demand_growth_rate': 0.25,                  # 25% annual demand growth
+        }
         self.annual_operating_days = 330  # 90% uptime
         
-    def calculate_comprehensive_economics(self, 
-                                        location: LocationPoint,
-                                        energy_source: EnergySource,
-                                        demand_center: DemandCenter,
-                                        water_source: WaterSource,
-                                        plant_capacity_kg_day: int = 1000) -> EconomicAnalysis:
-        """Calculate complete economic analysis for a hydrogen plant"""
+    
+    def calculate_detailed_investment_analysis(self, 
+                                             location: LocationPoint,
+                                             energy_source: EnergySource,
+                                             demand_center: DemandCenter,
+                                             water_source: WaterSource,
+                                             plant_capacity_kg_day: int = 1000,
+                                             electrolyzer_type: str = 'pem') -> DetailedInvestmentBreakdown:
+        """Calculate ultra-detailed investment analysis for investors"""
         
-        # === CAPITAL COSTS ===
-        capex = self._calculate_capital_costs(location, energy_source, water_source, plant_capacity_kg_day)
+        # Determine location-specific factors
+        location_factors = self._analyze_location_factors(location, energy_source, water_source)
         
-        # === OPERATING COSTS ===
-        opex = self._calculate_operating_costs(location, energy_source, demand_center, water_source, plant_capacity_kg_day)
+        # === DETAILED CAPEX CALCULATION ===
+        capex_breakdown = self._calculate_detailed_capex(location_factors, plant_capacity_kg_day, electrolyzer_type)
         
-        # === REVENUE CALCULATION ===
-        revenue = self._calculate_revenue(demand_center, plant_capacity_kg_day)
+        # === DETAILED OPEX CALCULATION ===
+        opex_breakdown = self._calculate_detailed_opex(location_factors, energy_source, plant_capacity_kg_day)
         
-        # === FINANCIAL METRICS ===
-        financial_metrics = self._calculate_financial_metrics(capex, opex, revenue)
+        # === PRODUCTION & REVENUE ANALYSIS ===
+        production_analysis = self._calculate_production_metrics(plant_capacity_kg_day, demand_center)
         
-        return EconomicAnalysis(
-            # CAPEX
-            plant_construction_cost=capex['construction'],
-            electrolyzer_cost=capex['electrolyzer'],
-            infrastructure_cost=capex['infrastructure'],
-            land_acquisition_cost=capex['land'],
-            total_capex=capex['total'],
+        # === ADVANCED FINANCIAL METRICS ===
+        financial_metrics = self._calculate_investor_metrics(capex_breakdown, opex_breakdown, production_analysis)
+        
+        # === MARKET & RISK ANALYSIS ===
+        market_analysis = self._analyze_market_conditions(location, demand_center)
+        
+        # Combine all analyses
+        return DetailedInvestmentBreakdown(
+            # Equipment Costs
+            electrolyzer_stack_cost=capex_breakdown['electrolyzer_stack'] / 1_00_00_000,
+            electrolyzer_power_supply=capex_breakdown['power_supply'] / 1_00_00_000,
+            electrolyzer_control_system=capex_breakdown['control_system'] / 1_00_00_000,
+            compression_system=capex_breakdown['compression'] / 1_00_00_000,
+            storage_tanks=capex_breakdown['storage'] / 1_00_00_000,
+            purification_equipment=capex_breakdown['purification'] / 1_00_00_000,
+            safety_systems=capex_breakdown['safety'] / 1_00_00_000,
             
-            # OPEX
-            electricity_cost_annual=opex['electricity'],
-            water_cost_annual=opex['water'],
-            labor_cost_annual=opex['labor'],
-            maintenance_cost_annual=opex['maintenance'],
-            transportation_cost_annual=opex['transportation'],
-            total_opex_annual=opex['total'],
+            # Infrastructure
+            plant_construction=capex_breakdown['construction'] / 1_00_00_000,
+            electrical_infrastructure=capex_breakdown['electrical'] / 1_00_00_000,
+            water_treatment_plant=capex_breakdown['water_treatment'] / 1_00_00_000,
+            hydrogen_pipeline_connection=capex_breakdown['pipeline'] / 1_00_00_000,
+            road_access_development=capex_breakdown['road_access'] / 1_00_00_000,
+            utility_connections=capex_breakdown['utilities'] / 1_00_00_000,
             
-            # Revenue
-            hydrogen_production_kg_day=plant_capacity_kg_day,
-            hydrogen_selling_price_per_kg=revenue['price_per_kg'],
-            annual_revenue=revenue['annual'],
+            # Land & Permits
+            land_acquisition=capex_breakdown['land'] / 1_00_00_000,
+            environmental_clearance=capex_breakdown['environmental'] / 1_00_00_000,
+            regulatory_permits=capex_breakdown['permits'] / 1_00_00_000,
             
-            # Financial metrics
-            annual_profit=financial_metrics['annual_profit'],
+            # Project Development
+            engineering_design=capex_breakdown['engineering'] / 1_00_00_000,
+            project_management=capex_breakdown['project_mgmt'] / 1_00_00_000,
+            commissioning_testing=capex_breakdown['commissioning'] / 1_00_00_000,
+            contingency_reserve=capex_breakdown['contingency'] / 1_00_00_000,
+            
+            # OPEX - Production
+            electricity_costs=opex_breakdown['electricity'] / 1_00_00_000,
+            water_costs=opex_breakdown['water'] / 1_00_00_000,
+            raw_material_costs=opex_breakdown['raw_materials'] / 1_00_00_000,
+            
+            # OPEX - Operations
+            skilled_operators=opex_breakdown['operators'] / 1_00_00_000,
+            maintenance_technicians=opex_breakdown['technicians'] / 1_00_00_000,
+            engineering_staff=opex_breakdown['engineers'] / 1_00_00_000,
+            administrative_staff=opex_breakdown['admin'] / 1_00_00_000,
+            
+            # OPEX - Maintenance
+            electrolyzer_maintenance=opex_breakdown['electrolyzer_maint'] / 1_00_00_000,
+            equipment_replacement=opex_breakdown['equipment_replace'] / 1_00_00_000,
+            facility_maintenance=opex_breakdown['facility_maint'] / 1_00_00_000,
+            
+            # OPEX - Business
+            insurance_costs=opex_breakdown['insurance'] / 1_00_00_000,
+            transportation_logistics=opex_breakdown['transport'] / 1_00_00_000,
+            marketing_sales=opex_breakdown['marketing'] / 1_00_00_000,
+            regulatory_compliance=opex_breakdown['compliance'] / 1_00_00_000,
+            
+            # Totals
+            total_capex=sum(capex_breakdown.values()) / 1_00_00_000,
+            total_annual_opex=sum(opex_breakdown.values()) / 1_00_00_000,
+            
+            # Production & Revenue
+            daily_production_kg=production_analysis['daily_kg'],
+            annual_production_tonnes=production_analysis['annual_tonnes'],
+            hydrogen_selling_price_per_kg=production_analysis['selling_price'],
+            annual_revenue=production_analysis['annual_revenue'] / 1_00_00_000,
+            annual_profit=production_analysis['annual_profit'] / 1_00_00_000,
+            
+            # Financial Metrics
             roi_percentage=financial_metrics['roi'],
             payback_period_years=financial_metrics['payback'],
-            npv_10_years=financial_metrics['npv'],
-            irr_percentage=financial_metrics['irr']
+            npv_10_years=financial_metrics['npv'] / 1_00_00_000,
+            irr_percentage=financial_metrics['irr'],
+            debt_equity_ratio=financial_metrics['debt_equity'],
+            interest_coverage_ratio=financial_metrics['interest_coverage'],
+            
+            # Market Analysis
+            market_demand_local_tonnes=market_analysis['local_demand'],
+            market_price_volatility=market_analysis['price_volatility'],
+            competition_analysis=market_analysis['competition'],
+            regulatory_risk_score=market_analysis['regulatory_risk']
         )
     
     def _calculate_capital_costs(self, location: LocationPoint, energy_source: EnergySource, 
@@ -342,7 +526,7 @@ class EnhancedEconomicCalculator:
 # Example usage function
 def analyze_economic_feasibility(location_data: dict) -> dict:
     """Analyze economic feasibility for a given location"""
-    calculator = EnhancedEconomicCalculator()
+    calculator = InvestorGradeEconomicCalculator()
     
     # Extract data from location analysis
     location = LocationPoint(

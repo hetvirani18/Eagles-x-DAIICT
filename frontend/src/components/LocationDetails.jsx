@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { Star, Zap, Factory, Droplets, MapPin, TrendingUp, DollarSign, Clock, Percent, IndianRupee, BarChart3, PieChart } from 'lucide-react';
+import { Button } from './ui/button';
+import { Star, Zap, Factory, Droplets, MapPin, TrendingUp, DollarSign, Clock, Percent, IndianRupee, BarChart3, PieChart, Calculator, Brain, AlertTriangle } from 'lucide-react';
+import AdvancedInvestmentAnalysis from './AdvancedInvestmentAnalysis';
 
 const LocationDetails = ({ location, onClose, embedded = false }) => {
+  const [showAdvancedAnalysis, setShowAdvancedAnalysis] = useState(false);
+  
   if (!location) return null;
 
   const getScoreColor = (score) => {
@@ -51,12 +55,22 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
               <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
               <span>Optimal Location</span>
             </div>
-            <button 
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setShowAdvancedAnalysis(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                AI Analysis
+              </Button>
+              <button 
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </CardTitle>
         </CardHeader>
       )}
@@ -330,123 +344,320 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
               </div>
             </div>
 
-            {/* Detailed Economics (if available) */}
-            {productionMetrics.capex_crores && (
-              <div className="space-y-3">
+            {/* Detailed Economics - Dynamic based on location data */}
+            <div className="space-y-3">
                 <h4 className="font-medium text-mocha flex items-center gap-2">
-                  <PieChart className="w-4 h-4" />
-                  Financial Breakdown
+                  <DollarSign className="w-4 h-4" />
+                  Complete Investment Analysis
                 </h4>
 
-                {/* Investment Breakdown */}
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <h5 className="text-sm font-medium text-gray-800 mb-2">Investment Required (CAPEX)</h5>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Investment:</span>
-                      <span className="font-medium">₹{productionMetrics.capex_crores} Cr</span>
-                    </div>
-                    {productionMetrics.investment_breakdown && (
-                      <>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">• Plant Construction:</span>
-                          <span>₹{(productionMetrics.investment_breakdown.plant_construction / 1_00_00_000).toFixed(1)} Cr</span>
+                {(() => {
+                  // Calculate dynamic investment based on location characteristics
+                  const calculateDynamicInvestment = () => {
+                    const baseScore = overallScore || 250;
+                    const energyDistance = proximityData.energy?.distance_km || 50;
+                    const demandDistance = proximityData.demand?.distance_km || 30;
+                    const waterDistance = proximityData.water?.distance_km || 20;
+                    
+                    // Dynamic capacity based on location quality and proximity
+                    let capacity_kg_day = 500; // Base capacity
+                    if (baseScore > 280) capacity_kg_day = 2000;
+                    else if (baseScore > 260) capacity_kg_day = 1500;
+                    else if (baseScore > 240) capacity_kg_day = 1000;
+                    else capacity_kg_day = 750;
+                    
+                    // Adjust capacity based on proximity to demand
+                    if (demandDistance < 10) capacity_kg_day *= 1.3;
+                    else if (demandDistance > 50) capacity_kg_day *= 0.8;
+                    
+                    // Land cost varies by location (urban vs rural)
+                    let landPricePerAcre = 1.5; // Base ₹1.5Cr/acre
+                    if (energyDistance < 20) landPricePerAcre = 2.5; // Urban
+                    else if (energyDistance < 40) landPricePerAcre = 1.8; // Semi-urban
+                    
+                    // Calculate land requirement (scales with capacity)
+                    const landRequired = Math.max(5, capacity_kg_day / 200); // Min 5 acres
+                    const landCost = landRequired * landPricePerAcre;
+                    
+                    // Equipment cost scales with capacity
+                    const electrolyzerCost = (capacity_kg_day / 1000) * 45; // ₹45Cr per 1000kg/day
+                    const powerElectronics = electrolyzerCost * 0.45;
+                    const gasProcessing = electrolyzerCost * 0.95;
+                    const compression = electrolyzerCost * 0.55;
+                    const installation = electrolyzerCost * 0.33;
+                    
+                    // Infrastructure scales with capacity and location
+                    const electricalSubstation = (capacity_kg_day / 1000) * 8;
+                    const waterTreatment = (capacity_kg_day / 1000) * 8;
+                    const buildings = (capacity_kg_day / 1000) * 8.8;
+                    
+                    // Permits cost more in urban areas
+                    const permitsBase = (capacity_kg_day / 1000) * 12;
+                    const permitsMultiplier = energyDistance < 30 ? 1.3 : 1.0;
+                    const permitsCost = permitsBase * permitsMultiplier;
+                    
+                    // Working capital
+                    const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
+                    const infrastructureTotal = electricalSubstation + waterTreatment + buildings;
+                    const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
+                    const workingCapital = totalBeforeWC * 0.12;
+                    
+                    // Operating costs vary by location
+                    const electricityRate = energyDistance < 20 ? 4.2 : 3.5; // Urban vs rural rates
+                    const annualElectricity = (capacity_kg_day * 365 * 0.85 * 55 * electricityRate) / 10_000_000;
+                    const annualWater = (capacity_kg_day / 1000) * 0.8;
+                    const staffCount = Math.max(15, capacity_kg_day / 100);
+                    const annualStaff = (staffCount / 25) * 3.5;
+                    const annualMaintenance = totalBeforeWC * 0.025;
+                    const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.15;
+                    
+                    // Revenue varies by market proximity
+                    const hydrogenPrice = demandDistance < 15 ? 380 : demandDistance < 30 ? 350 : 320;
+                    const annualProduction = capacity_kg_day * 365 * 0.85;
+                    const annualRevenue = (annualProduction * hydrogenPrice) / 10_000_000;
+                    const totalOpex = annualElectricity + annualWater + annualStaff + annualMaintenance + annualOther;
+                    const annualProfit = annualRevenue - totalOpex;
+                    
+                    // Financial metrics
+                    const totalCapex = totalBeforeWC + workingCapital;
+                    const roi = (annualProfit / totalCapex) * 100;
+                    const payback = totalCapex / annualProfit;
+                    
+                    return {
+                      capacity_kg_day: Math.round(capacity_kg_day),
+                      land_required_acres: Math.round(landRequired * 10) / 10,
+                      land_cost: Math.round(landCost * 10) / 10,
+                      electrolyzer_cost: Math.round(electrolyzerCost * 10) / 10,
+                      power_electronics: Math.round(powerElectronics * 10) / 10,
+                      gas_processing: Math.round(gasProcessing * 10) / 10,
+                      compression: Math.round(compression * 10) / 10,
+                      installation: Math.round(installation * 10) / 10,
+                      equipment_total: Math.round(equipmentTotal * 10) / 10,
+                      electrical_substation: Math.round(electricalSubstation * 10) / 10,
+                      water_treatment: Math.round(waterTreatment * 10) / 10,
+                      buildings: Math.round(buildings * 10) / 10,
+                      infrastructure_total: Math.round(infrastructureTotal * 10) / 10,
+                      permits_cost: Math.round(permitsCost * 10) / 10,
+                      working_capital: Math.round(workingCapital * 10) / 10,
+                      total_capex: Math.round(totalCapex * 10) / 10,
+                      annual_electricity: Math.round(annualElectricity * 10) / 10,
+                      annual_water: Math.round(annualWater * 10) / 10,
+                      annual_staff: Math.round(annualStaff * 10) / 10,
+                      annual_maintenance: Math.round(annualMaintenance * 10) / 10,
+                      annual_other: Math.round(annualOther * 10) / 10,
+                      total_opex: Math.round(totalOpex * 10) / 10,
+                      annual_revenue: Math.round(annualRevenue * 10) / 10,
+                      annual_profit: Math.round(annualProfit * 10) / 10,
+                      roi_percentage: Math.round(roi * 10) / 10,
+                      payback_years: Math.round(payback * 10) / 10,
+                      hydrogen_price: hydrogenPrice,
+                      electricity_rate: electricityRate,
+                      staff_count: staffCount,
+                      land_price_per_acre: landPricePerAcre
+                    };
+                  };
+                  
+                  const dynamicData = calculateDynamicInvestment();
+                  
+                  return (
+                    <>
+                      {/* Total Investment Required */}
+                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
+                        <div className="text-center mb-3">
+                          <div className="text-3xl font-bold text-purple-600">
+                            ₹{dynamicData.total_capex}Cr
+                          </div>
+                          <p className="text-sm text-purple-700">Total Investment Required</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            For {dynamicData.capacity_kg_day} kg/day Green H₂ Plant
+                          </p>
+                          <p className="text-xs text-purple-600 mt-1">
+                            Location Score: {overallScore || 0}/300 • 
+                            Land: ₹{dynamicData.land_price_per_acre}Cr/acre • 
+                            Power: ₹{dynamicData.electricity_rate}/kWh
+                          </p>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">• Electrolyzer:</span>
-                          <span>₹{(productionMetrics.investment_breakdown.electrolyzer_cost / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">• Infrastructure:</span>
-                          <span>₹{(productionMetrics.investment_breakdown.infrastructure_cost / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">• Land Acquisition:</span>
-                          <span>₹{(productionMetrics.investment_breakdown.land_acquisition / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Operating Costs */}
-                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                  <h5 className="text-sm font-medium text-red-800 mb-2">Annual Operating Costs (OPEX)</h5>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-red-600">Total Annual Cost:</span>
-                      <span className="font-medium">₹{productionMetrics.opex_annual_crores} Cr/year</span>
-                    </div>
-                    {productionMetrics.cost_breakdown && (
-                      <>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-red-500">• Electricity:</span>
-                          <span>₹{(productionMetrics.cost_breakdown.electricity_cost_annual / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-red-500">• Water:</span>
-                          <span>₹{(productionMetrics.cost_breakdown.water_cost_annual / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-red-500">• Labor:</span>
-                          <span>₹{(productionMetrics.cost_breakdown.labor_cost_annual / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-red-500">• Transportation:</span>
-                          <span>₹{(productionMetrics.cost_breakdown.transportation_cost_annual / 1_00_00_000).toFixed(1)} Cr</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Revenue & Profit */}
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                  <h5 className="text-sm font-medium text-green-800 mb-2">Revenue & Profitability</h5>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-green-600">Annual Revenue:</span>
-                      <span className="font-medium">₹{productionMetrics.revenue_annual_crores} Cr/year</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-green-600">Annual Profit:</span>
-                      <span className="font-medium">₹{productionMetrics.profit_annual_crores} Cr/year</span>
-                    </div>
-                    {productionMetrics.npv_10_years_crores && (
-                      <div className="flex justify-between">
-                        <span className="text-green-600">NPV (10 years):</span>
-                        <span className="font-medium">₹{productionMetrics.npv_10_years_crores.toFixed(1)} Cr</span>
                       </div>
-                    )}
-                    {productionMetrics.irr_percentage && (
-                      <div className="flex justify-between">
-                        <span className="text-green-600">IRR:</span>
-                        <span className="font-medium">{productionMetrics.irr_percentage.toFixed(1)}%</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Daily Production Economics */}
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <h5 className="text-sm font-medium text-blue-800 mb-2">Daily Production Economics</h5>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-blue-600">Production Capacity:</span>
-                      <span className="font-medium">{productionMetrics.capacity_kg_day || 0} kg/day</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-blue-600">Daily Revenue:</span>
-                      <span className="font-medium">₹{((productionMetrics.revenue_annual_crores * 1_00_00_000) / 365).toLocaleString()} /day</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-blue-600">Daily Profit:</span>
-                      <span className="font-medium">₹{((productionMetrics.profit_annual_crores * 1_00_00_000) / 365).toLocaleString()} /day</span>
-                    </div>
-                  </div>
-                </div>
+                      {/* Land & Site Development */}
+                      <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                        <h5 className="text-sm font-medium text-orange-700 mb-2 flex items-center">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          Land & Site Development
+                        </h5>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>Land Acquisition ({dynamicData.land_required_acres} acres):</span>
+                            <span className="font-medium">₹{dynamicData.land_cost}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Site Preparation & Access:</span>
+                            <span className="font-medium">₹{(dynamicData.land_cost * 0.25).toFixed(1)}Cr</span>
+                          </div>
+                          <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between font-medium text-orange-700">
+                              <span>Subtotal:</span>
+                              <span>₹{(dynamicData.land_cost * 1.25).toFixed(1)}Cr</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Equipment & Technology */}
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <h5 className="text-sm font-medium text-blue-700 mb-2 flex items-center">
+                          <Zap className="w-4 h-4 mr-1" />
+                          Equipment & Technology
+                        </h5>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>PEM Electrolyzer Stack:</span>
+                            <span className="font-medium">₹{dynamicData.electrolyzer_cost}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Power Electronics & Controls:</span>
+                            <span className="font-medium">₹{dynamicData.power_electronics}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Gas Processing & Storage:</span>
+                            <span className="font-medium">₹{dynamicData.gas_processing}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Compression Systems:</span>
+                            <span className="font-medium">₹{dynamicData.compression}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Installation & Commissioning:</span>
+                            <span className="font-medium">₹{dynamicData.installation}Cr</span>
+                          </div>
+                          <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between font-medium text-blue-700">
+                              <span>Subtotal:</span>
+                              <span>₹{dynamicData.equipment_total}Cr</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Infrastructure & Utilities */}
+                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                        <h5 className="text-sm font-medium text-green-700 mb-2 flex items-center">
+                          <Factory className="w-4 h-4 mr-1" />
+                          Infrastructure & Utilities
+                        </h5>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>Electrical Substation:</span>
+                            <span className="font-medium">₹{dynamicData.electrical_substation}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Water Treatment & Cooling:</span>
+                            <span className="font-medium">₹{dynamicData.water_treatment}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Buildings & Safety Systems:</span>
+                            <span className="font-medium">₹{dynamicData.buildings}Cr</span>
+                          </div>
+                          <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between font-medium text-green-700">
+                              <span>Subtotal:</span>
+                              <span>₹{dynamicData.infrastructure_total}Cr</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Operating Costs */}
+                      <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                        <h5 className="text-sm font-medium text-red-800 mb-2">Annual Operating Costs</h5>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>Electricity @ ₹{dynamicData.electricity_rate}/kWh:</span>
+                            <span className="font-medium">₹{dynamicData.annual_electricity}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Water & Consumables:</span>
+                            <span className="font-medium">₹{dynamicData.annual_water}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Staff & Admin ({dynamicData.staff_count} people):</span>
+                            <span className="font-medium">₹{dynamicData.annual_staff}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Maintenance & Insurance:</span>
+                            <span className="font-medium">₹{dynamicData.annual_maintenance}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Other Operating Expenses:</span>
+                            <span className="font-medium">₹{dynamicData.annual_other}Cr</span>
+                          </div>
+                          <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between font-medium text-red-700">
+                              <span>Total Annual OPEX:</span>
+                              <span>₹{dynamicData.total_opex}Cr</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Revenue & Profitability */}
+                      <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                        <h5 className="text-sm font-medium text-emerald-700 mb-2 flex items-center">
+                          <TrendingUp className="w-4 h-4 mr-1" />
+                          Revenue & Returns
+                        </h5>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span>Annual Production:</span>
+                            <span className="font-medium">{Math.round(dynamicData.capacity_kg_day * 365 * 0.85 / 1000)} tonnes (85% capacity)</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Selling Price (Market-adjusted):</span>
+                            <span className="font-medium">₹{dynamicData.hydrogen_price}/kg</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Annual Revenue:</span>
+                            <span className="font-medium">₹{dynamicData.annual_revenue}Cr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Annual Profit (Before Tax):</span>
+                            <span className="font-medium text-emerald-600">₹{dynamicData.annual_profit}Cr</span>
+                          </div>
+                          <div className="border-t pt-1 mt-1">
+                            <div className="flex justify-between font-medium text-emerald-700">
+                              <span>ROI (Annual):</span>
+                              <span>{dynamicData.roi_percentage}%</span>
+                            </div>
+                            <div className="flex justify-between font-medium text-emerald-700">
+                              <span>Payback Period:</span>
+                              <span>{dynamicData.payback_years} years</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Investment Grade */}
+                      <div className="text-center bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border border-green-200">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium mb-2">
+                          Investment Grade: {(() => {
+                            if (dynamicData.roi_percentage > 20 && dynamicData.payback_years < 6) return 'A+ (Excellent)';
+                            if (dynamicData.roi_percentage > 15 && dynamicData.payback_years < 8) return 'A (Very Good)';
+                            if (dynamicData.roi_percentage > 12 && dynamicData.payback_years < 10) return 'B+ (Good)';
+                            if (dynamicData.roi_percentage > 8) return 'B (Fair)';
+                            return 'C (Poor)';
+                          })()}
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          Based on {dynamicData.capacity_kg_day} kg/day capacity at this specific location
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Factors: Proximity to energy sources, demand centers, infrastructure quality
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
-            )}
           </div>
         )}
 
@@ -619,14 +830,32 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
   // Return content wrapped in Card when not embedded
   if (!embedded) {
     return (
-      <Card className="w-full max-w-md h-fit border-border bg-card">
-        {content}
-      </Card>
+      <>
+        <Card className="w-full max-w-md h-fit border-border bg-card">
+          {content}
+        </Card>
+        {showAdvancedAnalysis && (
+          <AdvancedInvestmentAnalysis 
+            location={{ lat: coordinates[0], lng: coordinates[1] }}
+            onClose={() => setShowAdvancedAnalysis(false)}
+          />
+        )}
+      </>
     );
   }
 
   // Return content directly when embedded
-  return content;
+  return (
+    <>
+      {content}
+      {showAdvancedAnalysis && (
+        <AdvancedInvestmentAnalysis 
+          location={{ lat: coordinates[0], lng: coordinates[1] }}
+          onClose={() => setShowAdvancedAnalysis(false)}
+        />
+      )}
+    </>
+  );
 };
 
 export default LocationDetails;
