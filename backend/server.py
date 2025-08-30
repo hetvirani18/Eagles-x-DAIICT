@@ -214,190 +214,59 @@ async def calculate_optimal_locations(
 
 @api_router.get("/optimal-locations")  
 async def get_optimal_locations():
-    """Get optimal locations using algorithm calculation with fallback"""
+    """Get optimal locations using pure algorithm calculation"""
     try:
-        # Use algorithm to calculate optimal locations for Gujarat bounds
-        bounds = SearchBounds(
-            north=24.7,   # Gujarat northern boundary
-            south=20.1,   # Gujarat southern boundary  
-            east=74.4,    # Gujarat eastern boundary
-            west=68.1     # Gujarat western boundary
-        )
+        logging.info("Starting optimal locations calculation...")
+        
+        # Create a strategic grid of high-potential locations in Gujarat
+        strategic_locations = [
+            (23.0225, 72.5714),  # Ahmedabad area
+            (22.3072, 70.8022),  # Rajkot area  
+            (21.1702, 72.8311),  # Surat area
+            (23.0300, 70.2000),  # Kutch area
+            (22.7500, 69.8700),  # Mundra area
+            (21.6000, 73.0000),  # Ankleshwar area
+            (22.5000, 71.5000),  # Central Gujarat
+            (23.2000, 71.8000),  # North Gujarat
+        ]
         
         optimal_locations = []
         
-        # Create a grid within Gujarat bounds for analysis
-        lat_step = (bounds.north - bounds.south) / 15  # 15x15 grid for better coverage
-        lng_step = (bounds.east - bounds.west) / 15
-        
-        # Analyze grid points across Gujarat
-        for i in range(8):  # Sample points for performance
-            for j in range(8):
-                lat = bounds.south + (i * lat_step * 1.8)  
-                lng = bounds.west + (j * lng_step * 1.8)
+        # Analyze each strategic location
+        for i, (lat, lng) in enumerate(strategic_locations):
+            try:
+                logging.info(f"Analyzing location {i+1}/{len(strategic_locations)}: {lat}, {lng}")
+                location = LocationPoint(latitude=lat, longitude=lng)
+                analysis = await optimizer.analyze_location(location, None)
                 
-                try:
-                    location = LocationPoint(latitude=lat, longitude=lng)
-                    analysis = await optimizer.analyze_location(location, None)
+                # Include all locations with decent scores
+                if analysis['overall_score'] > 30:  # Much lower threshold to get results
+                    optimal_locations.append(analysis)
+                    logging.info(f"✅ Added location {lat}, {lng} with score {analysis['overall_score']}")
+                else:
+                    logging.info(f"⚠️ Skipped location {lat}, {lng} with very low score {analysis['overall_score']}")
                     
-                    if analysis['overall_score'] > 200:  # Only include good locations
-                        optimal_locations.append(analysis)
-                except Exception as e:
-                    # Skip failed locations
-                    logging.warning(f"Failed to analyze location {lat}, {lng}: {e}")
-                    continue
+            except Exception as e:
+                logging.error(f"❌ Failed to analyze location {lat}, {lng}: {e}")
+                # Continue with other locations
+                continue
         
         # Sort by score and return top results
         optimal_locations.sort(key=lambda x: x['overall_score'], reverse=True)
         result = optimal_locations[:10]  # Return top 10
         
-        # If algorithm provided good results, return them
-        if len(result) >= 3:
-            return result
+        if len(result) == 0:
+            logging.error("No valid locations found by algorithm")
+            raise HTTPException(status_code=500, detail="Algorithm failed to generate any valid locations")
         
-        # Fallback to algorithm-generated dummy data if not enough results
-        logging.warning("Algorithm provided insufficient results, using fallback data")
-        return generate_fallback_optimal_locations()
+        logging.info(f"✅ Successfully generated {len(result)} optimal locations using algorithm")
+        return result
         
     except Exception as e:
-        logging.error(f"Optimal location calculation failed: {e}")
-        # Return fallback data instead of error
-        logging.warning("Using fallback optimal locations due to algorithm error")
-        return generate_fallback_optimal_locations()
-
-def generate_fallback_optimal_locations():
-    """Generate algorithm-based fallback data"""
-    return [
-        {
-            "location": {"latitude": 22.9200, "longitude": 70.8500},
-            "overall_score": 278.1,
-            "energy_score": 91.5,
-            "demand_score": 75.8,
-            "water_score": 68.2,
-            "pipeline_score": 82.4,
-            "transport_score": 85.7,
-            "production_metrics": {
-                "projected_cost_per_kg": 2.6,
-                "annual_capacity_mt": 28000,
-                "payback_period_years": 5.4,
-                "roi_percentage": 20.2
-            },
-            "nearest_energy": {
-                "nearest_source": "Charanka Solar Park",
-                "distance_km": 18.7,
-                "type": "Solar",
-                "capacity_mw": 590
-            },
-            "nearest_demand": {
-                "nearest_center": "Kandla Port & SEZ",
-                "distance_km": 22.3,
-                "type": "Port",
-                "demand_mt_year": 25000
-            },
-            "nearest_water": {
-                "nearest_source": "Narmada Main Canal",
-                "distance_km": 25.4,
-                "type": "Canal"
-            },
-            "nearest_pipeline": {
-                "nearest_pipeline": "Gujarat Gas Distribution Network",
-                "distance_km": 12.8,
-                "operator": "Gujarat Gas Limited"
-            },
-            "nearest_transport": {
-                "nearest_road": "NH-27 (Porbandar-Silchar Highway)",
-                "distance_km": 8.9,
-                "type": "National Highway",
-                "connectivity_score": 88
-            }
-        },
-        {
-            "location": {"latitude": 21.6500, "longitude": 72.8500},
-            "overall_score": 272.4,
-            "energy_score": 88.2,
-            "demand_score": 92.1,
-            "water_score": 78.5,
-            "pipeline_score": 65.8,
-            "transport_score": 89.3,
-            "production_metrics": {
-                "projected_cost_per_kg": 2.8,
-                "annual_capacity_mt": 22000,
-                "payback_period_years": 5.8,
-                "roi_percentage": 18.5
-            },
-            "nearest_energy": {
-                "nearest_source": "Dhuvaran Solar Complex",
-                "distance_km": 15.2,
-                "type": "Solar",
-                "capacity_mw": 400
-            },
-            "nearest_demand": {
-                "nearest_center": "GIDC Ankleshwar Chemical Complex", 
-                "distance_km": 8.5,
-                "type": "Chemical",
-                "demand_mt_year": 35000
-            },
-            "nearest_water": {
-                "nearest_source": "Tapi River",
-                "distance_km": 12.1,
-                "type": "River"
-            },
-            "nearest_pipeline": {
-                "nearest_pipeline": "Gujarat Gas Distribution Network",
-                "distance_km": 18.5,
-                "operator": "Gujarat Gas Limited"
-            },
-            "nearest_transport": {
-                "nearest_road": "Golden Quadrilateral (Gujarat Section)",
-                "distance_km": 5.2,
-                "type": "National Highway",
-                "connectivity_score": 98
-            }
-        },
-        {
-            "location": {"latitude": 22.7800, "longitude": 69.8200},
-            "overall_score": 265.3,
-            "energy_score": 95.8,
-            "demand_score": 88.1,
-            "water_score": 55.2,
-            "pipeline_score": 78.9,
-            "transport_score": 81.4,
-            "production_metrics": {
-                "projected_cost_per_kg": 2.7,
-                "annual_capacity_mt": 25000,
-                "payback_period_years": 5.6,
-                "roi_percentage": 19.1
-            },
-            "nearest_energy": {
-                "nearest_source": "Mundra Solar Park",
-                "distance_km": 12.1,
-                "type": "Solar",
-                "capacity_mw": 750
-            },
-            "nearest_demand": {
-                "nearest_center": "Mundra Port Industrial Zone",
-                "distance_km": 8.9,
-                "type": "Port",
-                "demand_mt_year": 30000
-            },
-            "nearest_water": {
-                "nearest_source": "Kutch Groundwater",
-                "distance_km": 35.2,
-                "type": "Groundwater"
-            },
-            "nearest_pipeline": {
-                "nearest_pipeline": "Gujarat Gas Distribution Network",
-                "distance_km": 15.7,
-                "operator": "Gujarat Gas Limited"
-            },
-            "nearest_transport": {
-                "nearest_road": "NH-27 (Porbandar-Silchar Highway)",
-                "distance_km": 6.3,
-                "type": "National Highway",
-                "connectivity_score": 88
-            }
-        }
-    ]
+        logging.error(f"❌ Optimal location calculation failed: {e}")
+        import traceback
+        logging.error(f"Full traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Algorithm calculation failed: {str(e)}")
 
 # Include the routers in the main app
 app.include_router(api_router)

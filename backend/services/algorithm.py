@@ -177,55 +177,45 @@ class HydrogenLocationOptimizer:
             'connectivity_score': nearest_road.connectivity_score if nearest_road else None
         }
 
-    def calculate_economic_viability_score(self, location: dict,
+    async def calculate_economic_viability_score(self, location: LocationPoint,
                                                nearest_energy: EnergySource = None,
                                                nearest_demand: DemandCenter = None,
                                                nearest_water: WaterSource = None) -> Tuple[float, dict]:
-        """Calculate economic viability score based on comprehensive financial analysis"""
+        """Calculate economic viability score based on simplified financial analysis"""
         
         if not (nearest_energy and nearest_demand and nearest_water):
             # Fallback to simple economic estimation
             return 50, {'simplified': True, 'message': 'Limited data for full economic analysis'}
         
         try:
-            lat, lng = location['lat'], location['lng']
-            capacity_mw = 50  # Default 50 MW capacity
-            electricity_price = nearest_energy.electricity_rate_per_kwh if nearest_energy else 3.5
+            # Use simplified economic scoring for reliable operation
+            basic_score = self._calculate_basic_economic_score(nearest_energy, nearest_demand, nearest_water)
+            
+            # Calculate some basic economic metrics
+            electricity_price = nearest_energy.cost_per_kwh if nearest_energy else 3.5
             hydrogen_price = 350  # ₹350/kg default
+            annual_capacity = 15000  # MT/year base capacity
             
-            # Use investor-grade economic analysis
-            investor_analysis = run_investor_grade_analysis(
-                location=(lat, lng),
-                capacity_mw=capacity_mw,
-                electricity_price=electricity_price,
-                hydrogen_price=hydrogen_price
-            )
+            # Simple ROI calculation
+            annual_revenue_cr = annual_capacity * hydrogen_price / 100000  # Convert to crores
+            capex_cr = annual_capacity * 0.8  # Estimated CAPEX
+            opex_cr = annual_revenue_cr * 0.6  # OPEX as 60% of revenue
+            annual_profit_cr = annual_revenue_cr - opex_cr
             
-            economics_score = investor_analysis.overall_investment_score
-            roi = investor_analysis.roi_percentage
-            payback = investor_analysis.payback_period_years
+            roi_percentage = (annual_profit_cr / capex_cr) * 100 if capex_cr > 0 else 0
+            payback_years = capex_cr / annual_profit_cr if annual_profit_cr > 0 else float('inf')
             
-            # Create detailed economic analysis
             economic_details = {
-                'investment_grade': investor_analysis.investment_grade,
-                'roi_percentage': roi,
-                'payback_period_years': payback,
-                'npv_crores': investor_analysis.npv_10_years,
-                'total_capex': investor_analysis.total_capex,
-                'annual_opex': investor_analysis.total_annual_opex,
+                'economic_grade': self._get_economic_grade(basic_score),
+                'roi_percentage': round(roi_percentage, 1),
+                'payback_period_years': round(min(20, payback_years), 1) if payback_years != float('inf') else float('inf'),
                 'hydrogen_price_per_kg': hydrogen_price,
                 'electricity_cost_per_kwh': electricity_price,
-                'economic_grade': self._get_economic_grade(economics_score),
-                'annual_production_tonnes': investor_analysis.annual_production_tonnes,
-                'capacity_utilization': investor_analysis.capacity_utilization,
-                'profitability_analysis': {
-                    'break_even_years': payback,
-                    'annual_profit_projection': investor_analysis.annual_revenue - investor_analysis.total_annual_opex,
-                    'profit_margin_percentage': ((investor_analysis.annual_revenue - investor_analysis.total_annual_opex) / investor_analysis.annual_revenue * 100) if investor_analysis.annual_revenue > 0 else 0
-                }
+                'annual_capacity_tonnes': annual_capacity,
+                'simplified_calculation': True
             }
             
-            return min(100, max(0, economics_score)), economic_details
+            return min(100, max(0, basic_score)), economic_details
             
         except Exception as e:
             print(f"Error in economic analysis: {e}")
@@ -237,29 +227,29 @@ class HydrogenLocationOptimizer:
         """Basic economic scoring when detailed analysis fails"""
         score = 50  # Base score
         
-        if energy and energy.electricity_rate_per_kwh:
+        if energy and energy.cost_per_kwh:
             # Lower electricity cost = higher score
-            if energy.electricity_rate_per_kwh <= 2.5:
+            if energy.cost_per_kwh <= 2.5:
                 score += 20
-            elif energy.electricity_rate_per_kwh <= 3.5:
+            elif energy.cost_per_kwh <= 3.5:
                 score += 10
-            elif energy.electricity_rate_per_kwh >= 5.0:
+            elif energy.cost_per_kwh >= 5.0:
                 score -= 10
         
-        if demand and demand.annual_demand_tonnes:
+        if demand and demand.hydrogen_demand_mt_year:
             # Higher demand = higher score
-            if demand.annual_demand_tonnes >= 5000:
+            if demand.hydrogen_demand_mt_year >= 5000:
                 score += 15
-            elif demand.annual_demand_tonnes >= 1000:
+            elif demand.hydrogen_demand_mt_year >= 1000:
                 score += 10
-            elif demand.annual_demand_tonnes >= 500:
+            elif demand.hydrogen_demand_mt_year >= 500:
                 score += 5
         
-        if water and water.water_quality_index:
-            # Better water quality = higher score
-            if water.water_quality_index >= 80:
+        if water and water.quality_score:
+            # Better water quality = higher score (quality_score is 1-10 scale)
+            if water.quality_score >= 8:
                 score += 10
-            elif water.water_quality_index >= 60:
+            elif water.quality_score >= 6:
                 score += 5
         
         return min(100, max(0, score))
@@ -294,9 +284,9 @@ class HydrogenLocationOptimizer:
             try:
                 # Get actual resource availability
                 electricity_mw = getattr(nearest_energy, 'capacity_mw', 50.0)
-                electricity_price = getattr(nearest_energy, 'electricity_rate_per_kwh', 3.5)
+                electricity_price = getattr(nearest_energy, 'cost_per_kwh', 3.5)
                 water_supply_lph = getattr(nearest_water, 'flow_rate_lph', 50000)
-                total_demand_kg_day = getattr(nearest_demand, 'hydrogen_demand_kg_day', 1000)
+                total_demand_kg_day = getattr(nearest_demand, 'hydrogen_demand_mt_year', 1) * 1000 / 365  # Convert MT/year to kg/day
                 
                 # Calculate land price based on location
                 distance_to_city = energy_info.get('distance_km', 50)
@@ -361,25 +351,41 @@ class HydrogenLocationOptimizer:
                 pass
         
         # Fallback: Simple calculation based on score
-        base_cost = 350  # Base cost per kg in INR
+        base_cost_inr = 350  # Base cost per kg in INR
         base_capacity = 15000  # Base capacity in MT/year
         
         # Cost reduction factors based on infrastructure quality
         if overall_score > 250:
             cost_reduction = (overall_score - 200) / 100 * 80  # Up to 80 INR reduction
-            base_cost = max(200, base_cost - cost_reduction)
+            base_cost_inr = max(200, base_cost_inr - cost_reduction)
             
         # Capacity increase factors  
         if overall_score > 200:
             capacity_multiplier = 1 + (overall_score - 200) / 200
             base_capacity = int(base_capacity * capacity_multiplier)
+        
+        # Calculate payback and ROI based on economics
+        annual_revenue_cr = base_capacity * base_cost_inr * 1.2 / 10000000  # Revenue in crores
+        capex_cr = base_capacity * 0.8  # Estimated CAPEX in crores
+        opex_cr = annual_revenue_cr * 0.6  # OPEX as 60% of revenue
+        annual_profit_cr = annual_revenue_cr - opex_cr
+        
+        if annual_profit_cr > 0:
+            payback_years = capex_cr / annual_profit_cr
+            roi_percentage = (annual_profit_cr / capex_cr) * 100
+        else:
+            payback_years = float('inf')
+            roi_percentage = 0
             
         return {
-            'capacity_kg_day': base_capacity * 1000 / 330,  # Convert to kg/day
+            'capacity_kg_day': round(base_capacity * 1000 / 330, 1),  # Convert to kg/day
             'annual_capacity_mt': base_capacity,
-            'projected_cost_per_kg': round(base_cost, 2),
-            'payback_period_years': max(5, 12 - (overall_score - 200) / 50),
-            'roi_percentage': min(30, max(10, (overall_score - 150) / 10)),
+            'projected_cost_per_kg': round(base_cost_inr / 100, 2),  # Convert INR to display format (₹/kg)
+            'payback_period_years': round(min(20, payback_years), 1) if payback_years != float('inf') else float('inf'),
+            'roi_percentage': round(min(40, max(5, roi_percentage)), 1),
+            'capex_crores': round(capex_cr, 1),
+            'annual_revenue_crores': round(annual_revenue_cr, 1),
+            'annual_profit_crores': round(annual_profit_cr, 1),
             'simplified_calculation': True
         }
     
@@ -387,7 +393,10 @@ class HydrogenLocationOptimizer:
                              weights: WeightedAnalysisRequest = None) -> LocationPoint:
         """Comprehensive location analysis with database fallback"""
         if not weights:
-            weights = WeightedAnalysisRequest(bounds=None)
+            # Create default weights with dummy bounds
+            from models import SearchBounds
+            default_bounds = SearchBounds(north=25.0, south=20.0, east=75.0, west=68.0)
+            weights = WeightedAnalysisRequest(bounds=default_bounds)
             
         try:
             # Fetch all data from database
@@ -454,7 +463,7 @@ class HydrogenLocationOptimizer:
         overall_grade = self._get_overall_grade(overall_score)
         
         return {
-            'location': location,
+            'location': {'latitude': location.latitude, 'longitude': location.longitude},
             'overall_score': round(overall_score, 1),
             'infrastructure_score': round(infrastructure_score, 1),
             'economic_score': round(economic_score, 1),
@@ -476,6 +485,21 @@ class HydrogenLocationOptimizer:
             'economic_analysis': economic_info,
             'production_metrics': production_metrics
         }
+    
+    def get_investment_grade(self, roi_percentage: float, payback_years: float) -> str:
+        """Convert ROI and payback to investment grade"""
+        if roi_percentage >= 25 and payback_years <= 4:
+            return 'A+ (Excellent)'
+        elif roi_percentage >= 20 and payback_years <= 5:
+            return 'A (Very Good)'
+        elif roi_percentage >= 15 and payback_years <= 6:
+            return 'B+ (Good)'
+        elif roi_percentage >= 10 and payback_years <= 8:
+            return 'B (Acceptable)'
+        elif roi_percentage >= 5 and payback_years <= 12:
+            return 'C (Below Average)'
+        else:
+            return 'D (Poor)'
     
     def _get_overall_grade(self, score: float) -> str:
         """Convert overall score to investment grade"""
@@ -503,6 +527,8 @@ class HydrogenLocationOptimizer:
                 location=LocationPoint(latitude=23.3, longitude=71.2),
                 capacity_mw=590,
                 cost_per_kwh=2.5,
+                annual_generation_gwh=1300,
+                operator="Gujarat Urja Vikas Nigam Limited",
                 availability_factor=0.22
             ),
             EnergySource(
@@ -511,6 +537,8 @@ class HydrogenLocationOptimizer:
                 location=LocationPoint(latitude=22.8, longitude=69.7),
                 capacity_mw=750,
                 cost_per_kwh=2.3,
+                annual_generation_gwh=1650,
+                operator="Adani Solar Energy Limited",
                 availability_factor=0.24
             ),
             EnergySource(
@@ -519,6 +547,8 @@ class HydrogenLocationOptimizer:
                 location=LocationPoint(latitude=21.6, longitude=72.9),
                 capacity_mw=400,
                 cost_per_kwh=2.7,
+                annual_generation_gwh=875,
+                operator="Gujarat State Electricity Corporation",
                 availability_factor=0.21
             )
         ]
@@ -531,6 +561,8 @@ class HydrogenLocationOptimizer:
                 type="Port",
                 location=LocationPoint(latitude=23.0, longitude=70.2),
                 hydrogen_demand_mt_year=25000,
+                current_hydrogen_source="Natural Gas SMR",
+                green_transition_potential="High",
                 willingness_to_pay=8.5
             ),
             DemandCenter(
@@ -538,6 +570,8 @@ class HydrogenLocationOptimizer:
                 type="Chemical",
                 location=LocationPoint(latitude=21.6, longitude=73.0),
                 hydrogen_demand_mt_year=35000,
+                current_hydrogen_source="Naphtha Reforming",
+                green_transition_potential="High",
                 willingness_to_pay=9.2
             ),
             DemandCenter(
@@ -545,6 +579,8 @@ class HydrogenLocationOptimizer:
                 type="Port",
                 location=LocationPoint(latitude=22.8, longitude=69.7),
                 hydrogen_demand_mt_year=30000,
+                current_hydrogen_source="Natural Gas SMR",
+                green_transition_potential="Medium",
                 willingness_to_pay=8.8
             )
         ]
@@ -557,21 +593,30 @@ class HydrogenLocationOptimizer:
                 type="Canal",
                 location=LocationPoint(latitude=22.5, longitude=72.1),
                 capacity_liters_day=500000000,
-                quality_score=8.5
+                quality_score=8.5,
+                seasonal_availability="Perennial",
+                extraction_cost=0.002,
+                regulatory_clearance=True
             ),
             WaterSource(
                 name="Tapi River",
                 type="River", 
                 location=LocationPoint(latitude=21.2, longitude=72.8),
                 capacity_liters_day=200000000,
-                quality_score=7.2
+                quality_score=7.2,
+                seasonal_availability="Seasonal",
+                extraction_cost=0.003,
+                regulatory_clearance=True
             ),
             WaterSource(
                 name="Kutch Groundwater",
                 type="Groundwater",
                 location=LocationPoint(latitude=23.2, longitude=69.8),
                 capacity_liters_day=100000000,
-                quality_score=6.8
+                quality_score=6.8,
+                seasonal_availability="Perennial",
+                extraction_cost=0.005,
+                regulatory_clearance=True
             )
         ]
         
@@ -582,6 +627,10 @@ class HydrogenLocationOptimizer:
                 name="Gujarat Gas Distribution Network",
                 operator="Gujarat Gas Limited",
                 capacity_mmscmd=45,
+                diameter_inches=24,
+                pressure_kg_cm2=40,
+                pipeline_type="Natural Gas",
+                connection_cost=50000,  # Cost per km
                 route=[
                     LocationPoint(latitude=23.0, longitude=70.0),
                     LocationPoint(latitude=22.5, longitude=71.0),
@@ -598,6 +647,9 @@ class HydrogenLocationOptimizer:
                 name="NH-27 (Porbandar-Silchar Highway)",
                 type="National Highway",
                 connectivity_score=88,
+                transport_capacity="Heavy",
+                condition="Good",
+                toll_cost_per_km=2.5,
                 route=[
                     LocationPoint(latitude=22.0, longitude=69.5),
                     LocationPoint(latitude=22.5, longitude=70.5),
@@ -608,6 +660,9 @@ class HydrogenLocationOptimizer:
                 name="Golden Quadrilateral (Gujarat Section)",
                 type="National Highway",
                 connectivity_score=98,
+                transport_capacity="Heavy",
+                condition="Excellent", 
+                toll_cost_per_km=3.0,
                 route=[
                     LocationPoint(latitude=21.5, longitude=72.0),
                     LocationPoint(latitude=22.0, longitude=72.5),
