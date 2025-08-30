@@ -9,7 +9,7 @@ const LocationDetails = ({ location, onClose }) => {
 
   const getScoreColor = (score) => {
     if (score >= 270) return 'text-green-600 bg-green-50';
-    if (score >= 250) return 'text-yellow-600 bg-yellow-50';
+    if (score >= 250) return 'text-amber-600 bg-amber-50';
     return 'text-red-600 bg-red-50';
   };
 
@@ -42,16 +42,16 @@ const LocationDetails = ({ location, onClose }) => {
   };
 
   return (
-    <Card className="w-full max-w-md h-fit">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
+    <Card className="w-full max-w-md h-fit border-mocha bg-card">
+      <CardHeader className="pb-4 border-b border-mocha/20">
+        <CardTitle className="flex items-center justify-between text-mocha">
           <div className="flex items-center gap-2">
             <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
             <span>Optimal Location</span>
           </div>
           <button 
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-mocha/60 hover:text-mocha transition-colors"
           >
             ✕
           </button>
@@ -65,16 +65,16 @@ const LocationDetails = ({ location, onClose }) => {
             <TrendingUp className="w-4 h-4 mr-1" />
             {getScoreLabel(overallScore)} - {overallScore}/300
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-mocha/70">
             Coordinates: {coordinates[0]?.toFixed(4) || 'N/A'}°, {coordinates[1]?.toFixed(4) || 'N/A'}°
           </p>
         </div>
 
-        <Separator />
+        <Separator className="bg-mocha/20" />
 
         {/* Production Metrics */}
         <div className="space-y-3">
-          <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-700">
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-mocha">
             Production Potential
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -123,11 +123,11 @@ const LocationDetails = ({ location, onClose }) => {
           )}
         </div>
 
-        <Separator />
+        <Separator className="bg-mocha/20" />
 
         {/* Proximity Analysis */}
         <div className="space-y-3">
-          <h3 className="font-semibold text-sm uppercase tracking-wide text-gray-700">
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-mocha">
             Proximity Analysis
           </h3>
           
@@ -236,12 +236,12 @@ const LocationDetails = ({ location, onClose }) => {
           )}
         </div>
 
-        <Separator />
+        <Separator className="bg-mocha/20" />
 
         {/* Investment Summary */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-3 rounded-lg">
-          <h4 className="font-medium text-green-800 mb-2">Investment Recommendation</h4>
-          <p className="text-sm text-gray-700">
+        <div className="bg-coconut border border-mocha/20 p-3 rounded-lg">
+          <h4 className="font-medium text-mocha mb-2">Investment Recommendation</h4>
+          <p className="text-sm text-mocha/80">
             This location offers {getScoreLabel(overallScore).toLowerCase()} potential for green hydrogen production 
             with competitive costs and strategic positioning near key infrastructure. 
             {productionMetrics.roi_percentage && productionMetrics.roi_percentage > 15 && 

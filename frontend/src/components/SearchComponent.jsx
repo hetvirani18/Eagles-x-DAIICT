@@ -209,7 +209,7 @@ const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], ene
   return (
     <div className="relative w-full max-w-md">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-mocha/60 w-4 h-4" />
         <Input
           ref={inputRef}
           type="text"
@@ -218,18 +218,18 @@ const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], ene
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
-          className="pl-10 pr-10"
+          className="pl-10 pr-10 border-mocha/30 focus:border-mocha text-mocha placeholder:text-mocha/50"
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          {loading && <Loader className="w-4 h-4 animate-spin text-gray-400" />}
+          {loading && <Loader className="w-4 h-4 animate-spin text-mocha/60" />}
           {query && !loading && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 p-0 hover:bg-mocha/10"
               onClick={clearSearch}
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-mocha/60" />
             </Button>
           )}
         </div>
@@ -237,34 +237,34 @@ const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], ene
 
       {/* Error message */}
       {error && (
-        <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-red-50 border border-red-200 rounded-md shadow-sm z-50">
+        <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-red-50 border border-red-300 rounded-md shadow-sm z-50">
           <p className="text-red-600 text-sm">⚠️ {error}</p>
         </div>
       )}
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && !error && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-mocha/30 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
           {suggestions.map((city, index) => (
             <div
               key={city.id || `${city.name}-${index}`}
               className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
                 index === selectedIndex
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'hover:bg-gray-50'
+                  ? 'bg-coconut text-mocha'
+                  : 'hover:bg-coconut/50'
               }`}
               onClick={() => selectLocation(city)}
             >
-              <MapPin className="w-4 h-4 text-gray-400" />
+              <MapPin className="w-4 h-4 text-mocha/60" />
               <div className="flex-1">
-                <span className="text-sm font-medium">{city.name}</span>
+                <span className="text-sm font-medium text-mocha">{city.name}</span>
                 {city.district && (
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-mocha/60 ml-2">
                     {city.district}
                   </span>
                 )}
                 {city.population && (
-                  <span className="text-xs text-gray-400 ml-2">
+                  <span className="text-xs text-mocha/50 ml-2">
                     Pop: {city.population.toLocaleString()}
                   </span>
                 )}
@@ -276,8 +276,8 @@ const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], ene
 
       {/* No results message */}
       {showSuggestions && suggestions.length === 0 && !loading && !error && query.length > 2 && (
-        <div className="absolute top-full left-0 right-0 mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md shadow-sm z-50">
-          <p className="text-gray-600 text-sm text-center">No cities found for "{query}"</p>
+        <div className="absolute top-full left-0 right-0 mt-1 p-3 bg-coconut border border-mocha/30 rounded-md shadow-sm z-50">
+          <p className="text-mocha/70 text-sm text-center">No cities found for "{query}"</p>
         </div>
       )}
 
