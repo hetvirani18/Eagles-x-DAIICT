@@ -4,7 +4,21 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { citiesAPI, handleApiError } from '../services/api';
 
-const SearchComponent = ({ onLocationSelect, onClear }) => {
+// Helper function to calculate distance between two coordinates
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c; // Distance in kilometers
+  return distance;
+};
+
+const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], energySources = [], demandCenters = [] }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -108,11 +122,69 @@ const SearchComponent = ({ onLocationSelect, onClear }) => {
     setShowSuggestions(false);
     setError(null);
     
-    // Leaflet uses [lat, lng] format
-    const coordinates = [city.location.latitude, city.location.longitude];
-    onLocationSelect(coordinates);
+    // City coordinates
+    const cityLat = city.location.latitude;
+    const cityLng = city.location.longitude;
     
-    console.log('📍 Selected city:', city.name, coordinates);
+    // Find the nearest relevant location (optimal locations have priority)
+    let nearestLocation = null;
+    let minDistance = Infinity;
+    let locationType = 'city';
+    
+    // Check optimal locations first (highest priority)
+    optimalLocations.forEach((location) => {
+      const distance = calculateDistance(
+        cityLat, cityLng,
+        location.location.latitude, location.location.longitude
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestLocation = location;
+        locationType = 'optimal';
+      }
+    });
+    
+    // If no optimal location within reasonable distance, check energy sources
+    if (minDistance > 50) { // 50km threshold
+      energySources.forEach((source) => {
+        const distance = calculateDistance(
+          cityLat, cityLng,
+          source.location.latitude, source.location.longitude
+        );
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestLocation = source;
+          locationType = 'energy';
+        }
+      });
+    }
+    
+    // If still no location within reasonable distance, check demand centers
+    if (minDistance > 50) {
+      demandCenters.forEach((center) => {
+        const distance = calculateDistance(
+          cityLat, cityLng,
+          center.location.latitude, center.location.longitude
+        );
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestLocation = center;
+          locationType = 'demand';
+        }
+      });
+    }
+    
+    // Use nearest location if found within 100km, otherwise use city center
+    if (nearestLocation && minDistance < 100) {
+      const coordinates = [nearestLocation.location.latitude, nearestLocation.location.longitude];
+      onLocationSelect(coordinates, nearestLocation, locationType);
+      console.log(`📍 Selected nearest ${locationType} location near ${city.name}:`, nearestLocation.name || 'Optimal Location', `(${minDistance.toFixed(1)}km away)`);
+    } else {
+      // Fallback to city center if no relevant locations nearby
+      const coordinates = [cityLat, cityLng];
+      onLocationSelect(coordinates, city, 'city');
+      console.log('📍 Selected city center:', city.name, coordinates);
+    }
   };
 
   const clearSearch = () => {
@@ -141,7 +213,7 @@ const SearchComponent = ({ onLocationSelect, onClear }) => {
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search Gujarat cities (e.g., Ahmedabad, Surat...)"
+          placeholder="Search Gujarat cities - we'll find the nearest H₂ location!"
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}

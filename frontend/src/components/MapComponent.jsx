@@ -34,7 +34,8 @@ const MapController = ({ searchLocation, onLocationSelect }) => {
   
   useEffect(() => {
     if (searchLocation) {
-      map.setView(searchLocation, 10);
+      // Use a higher zoom level to focus on the specific location
+      map.setView(searchLocation, 12);
     }
   }, [searchLocation, map]);
 
