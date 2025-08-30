@@ -226,7 +226,10 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {financial_analysis.scenario_analysis?.most_likely?.payback_period_years?.toFixed(1) || 'N/A'}
+                  {(() => {
+                    const v = financial_analysis.scenario_analysis?.most_likely?.payback_period_years;
+                    return Number.isFinite(v) ? v.toFixed(1) : (v ? 'Never' : 'N/A');
+                  })()}
                 </div>
                 <p className="text-sm text-gray-600">Payback (Years)</p>
               </CardContent>
@@ -387,7 +390,7 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
                             </div>
                             <div>
                               <p className="text-gray-600">Payback</p>
-                              <p className="font-medium">{data.payback_period_years?.toFixed(1)} yrs</p>
+                              <p className="font-medium">{Number.isFinite(data.payback_period_years) ? data.payback_period_years?.toFixed(1) + ' yrs' : 'Never'}</p>
                             </div>
                           </div>
                         </div>
@@ -881,9 +884,9 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
                               </tr>
                               <tr>
                                 <td className="py-2">Payback (Yrs)</td>
-                                <td className="text-center text-green-600">{financial_analysis.scenario_analysis.optimistic?.payback_period_years?.toFixed(1)}</td>
-                                <td className="text-center">{financial_analysis.scenario_analysis.most_likely?.payback_period_years?.toFixed(1)}</td>
-                                <td className="text-center text-red-600">{financial_analysis.scenario_analysis.pessimistic?.payback_period_years?.toFixed(1)}</td>
+                                <td className="text-center text-green-600">{(() => { const v = financial_analysis.scenario_analysis.optimistic?.payback_period_years; return Number.isFinite(v) ? v?.toFixed(1) : 'Never'; })()}</td>
+                                <td className="text-center">{(() => { const v = financial_analysis.scenario_analysis.most_likely?.payback_period_years; return Number.isFinite(v) ? v?.toFixed(1) : 'Never'; })()}</td>
+                                <td className="text-center text-red-600">{(() => { const v = financial_analysis.scenario_analysis.pessimistic?.payback_period_years; return Number.isFinite(v) ? v?.toFixed(1) : 'Never'; })()}</td>
                               </tr>
                             </tbody>
                           </table>

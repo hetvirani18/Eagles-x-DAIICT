@@ -1,0 +1,100 @@
+District,Category,Business_Scale,Investment_Range,Typical_Investment,Company_Registration_Cost,Land_Cost_Per_SqFt,Land_Requirement_SqFt,Total_Land_Cost,Electricity_Connection_Cost,Water_Connection_Cost,Professional_Tax_Annual,Total_Initial_Setup_Cost,MSME_Capital_Subsidy_Rate,Available_Capital_Subsidy,Interest_Subsidy_Rate,Net_Setup_Cost_After_Subsidies,Power_Requirement_KW
+Ahmedabad,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Ahmedabad,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Ahmedabad,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Amreli,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Amreli,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Amreli,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Anand,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Anand,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Anand,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Aravalli,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Aravalli,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Aravalli,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Banaskantha,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Banaskantha,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Banaskantha,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Bharuch,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Bharuch,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Bharuch,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Bhavnagar,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Bhavnagar,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Bhavnagar,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Botad,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Botad,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Botad,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Chhota Udepur,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Chhota Udepur,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Chhota Udepur,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Dahod,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Dahod,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Dahod,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Dang,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Dang,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Dang,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Devbhoomi Dwarka,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Devbhoomi Dwarka,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Devbhoomi Dwarka,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Gandhinagar,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Gandhinagar,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Gandhinagar,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Gir Somnath,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Gir Somnath,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Gir Somnath,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Jamnagar,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Jamnagar,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Jamnagar,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Junagadh,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Junagadh,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Junagadh,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Kheda,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Kheda,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Kheda,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Kutch,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Kutch,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Kutch,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Mahisagar,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Mahisagar,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Mahisagar,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Mehsana,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Mehsana,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Mehsana,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Morbi,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Morbi,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Morbi,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Narmada,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Narmada,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Narmada,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Navsari,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Navsari,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Navsari,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Panchmahal,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Panchmahal,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Panchmahal,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Patan,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Patan,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Patan,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Porbandar,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Porbandar,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Porbandar,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Rajkot,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Rajkot,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Rajkot,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Sabarkantha,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Sabarkantha,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Sabarkantha,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Surat,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Surat,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Surat,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Surendranagar,Category II (Moderate Development),Micro Enterprise,< 1 Crore,500000,9499,800,1000,800000,18000,10000,200,897499.0,20,100000.0,6,797499.0,25
+Surendranagar,Category II (Moderate Development),Small Enterprise,1-10 Crore,2500000,9499,800,3000,2400000,18000,10000,200,2537499.0,20,500000.0,6,2037499.0,100
+Surendranagar,Category II (Moderate Development),Medium Enterprise,10-50 Crore,15000000,9499,800,8000,6400000,18000,10000,200,6787499.0,20,3000000.0,6,3787499.0,500
+Tapi,Category I (Backward Areas),Micro Enterprise,< 1 Crore,500000,9499,500,1000,500000,15000,8000,200,592499.0,25,125000.0,7,467499.0,25
+Tapi,Category I (Backward Areas),Small Enterprise,1-10 Crore,2500000,9499,500,3000,1500000,15000,8000,200,1632499.0,25,625000.0,7,1007499.0,100
+Tapi,Category I (Backward Areas),Medium Enterprise,10-50 Crore,15000000,9499,500,8000,4000000,15000,8000,200,4382499.0,25,3500000.0,7,882499.0,500
+Vadodara,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Vadodara,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Vadodara,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500
+Valsad,Category III (Developed/Urban Areas),Micro Enterprise,< 1 Crore,500000,9499,1500,1000,1500000,25000,15000,200,1609499.0,10,50000.0,5,1559499.0,25
+Valsad,Category III (Developed/Urban Areas),Small Enterprise,1-10 Crore,2500000,9499,1500,3000,4500000,25000,15000,200,4649499.0,10,250000.0,5,4399499.0,100
+Valsad,Category III (Developed/Urban Areas),Medium Enterprise,10-50 Crore,15000000,9499,1500,8000,12000000,25000,15000,200,12399499.0,10,1000000.0,5,11399499.0,500

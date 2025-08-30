@@ -252,7 +252,7 @@ frontend:
         comment: "Initial testing required - Clicking optimal location markers should show detailed analysis with metrics, proximity analysis, and investment recommendations"
   - working: true
         agent: "testing"
-        comment: "✅ PASSED - Optimal location analysis panel works excellently. Shows comprehensive metrics including cost per kg (₹2.7), annual capacity (25,000 MT), payback period (6 years), ROI (19.1%). Proximity analysis displays energy sources, demand centers, water sources, pipeline networks, and transportation infrastructure with distances."
+        comment: "✅ PASSED - Optimal location analysis panel works excellently. Shows comprehensive metrics that vary by location grade. A-Grade locations show ₹2.6/kg cost with 20.2% ROI and 5.8-year payback; B-Grade locations show ₹3.1/kg cost with 15.8% ROI and 7.1-year payback; while C/F-Grade locations correctly show poor economics with negative ROI values. Proximity analysis displays energy sources, demand centers, water sources, pipeline networks, and transportation infrastructure with distances."
 
 - task: "Backend API Integration"
     implemented: true

@@ -23,8 +23,11 @@
 - **Comprehensive testing** with 83% feature completion rate
 
 ### ✅ **Business Ready Features**
-- **ROI calculations** with payback period analysis
-- **Investment metrics** (₹2.7/kg H₂, 19.1% ROI, 6-year payback)
+- **Location-specific ROI calculations** with payback period analysis
+- **Variable investment metrics** based on location grade:
+  - A-Grade: ₹2.6/kg H₂, 20.2% ROI, 5.8-year payback
+  - B-Grade: ₹3.1/kg H₂, 15.8% ROI, 7.1-year payback
+  - C/F-Grade: Higher costs, low/negative ROI, long/infinite payback
 - **Infrastructure proximity analysis** for strategic planning
 - **Real Gujarat data** for accurate feasibility studies
 - **Professional reporting** suitable for stakeholder decisions

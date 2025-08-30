@@ -436,14 +436,15 @@ class InvestorEconomicCalculator:
         total_annual_opex = sum(opex.values())
         annual_revenue = production['annual_revenue']
         annual_profit = annual_revenue - total_annual_opex
-        
+
         # Update production with profit
         production['annual_profit'] = annual_profit
-        
+
         # Basic metrics
         roi = (annual_profit / total_capex) * 100 if total_capex > 0 else 0
-        payback = total_capex / annual_profit if annual_profit > 0 else 99
-        
+        # Payback is undefined when profits are non-positive; use infinity for consistency
+        payback = total_capex / annual_profit if annual_profit > 0 else float('inf')
+
         # NPV (10 years, 12% discount rate)
         discount_rate = 0.12
         npv = -total_capex
@@ -451,18 +452,18 @@ class InvestorEconomicCalculator:
             # Include price escalation
             escalated_profit = annual_profit * (1 + self.market_data['price_growth_rate']) ** year
             npv += escalated_profit / ((1 + discount_rate) ** year)
-        
+
         # IRR calculation
         irr = self._calculate_irr(total_capex, annual_profit, 10)
-        
+
         # Financial ratios
         debt_equity_ratio = 2.33  # Assuming 70:30 debt:equity
         debt_amount = total_capex * 0.7
         annual_interest = debt_amount * 0.08  # 8% interest
         interest_coverage = annual_profit / annual_interest if annual_interest > 0 else 99
-        
+
         cash_flow_margin = (annual_profit / annual_revenue) * 100 if annual_revenue > 0 else 0
-        
+
         return {
             'roi': roi,
             'payback': payback,
