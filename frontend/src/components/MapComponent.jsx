@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Star, Zap, Factory, Droplets, MapPin, Loader } from 'lucide-react';
@@ -54,10 +54,81 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
   } = useApiData();
   
   const [selectedOptimalLocation, setSelectedOptimalLocation] = useState(null);
+  const [resourceRadii, setResourceRadii] = useState({
+    energy: null,
+    demand: null,
+    water: null
+  });
   const gujaratCenter = [22.5, 71.5];
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Returns distance in kilometers
+  };
+
+  // Calculate resource radii for the selected optimal location
+  const calculateResourceRadii = (optimalLocation) => {
+    const locationLat = optimalLocation.location.latitude;
+    const locationLng = optimalLocation.location.longitude;
+
+    let maxEnergyDistance = 0;
+    let maxDemandDistance = 0;
+    let maxWaterDistance = 0;
+
+    // Scan energy sources within 100km
+    energySources.forEach(source => {
+      const distance = calculateDistance(locationLat, locationLng,
+        source.location.latitude, source.location.longitude);
+      if (distance <= 100) {
+        maxEnergyDistance = Math.max(maxEnergyDistance, distance);
+      }
+    });
+
+    // Scan demand centers within 100km
+    demandCenters.forEach(center => {
+      const distance = calculateDistance(locationLat, locationLng,
+        center.location.latitude, center.location.longitude);
+      if (distance <= 100) {
+        maxDemandDistance = Math.max(maxDemandDistance, distance);
+      }
+    });
+
+    // Scan water sources within 80km
+    waterSources.forEach(water => {
+      const distance = calculateDistance(locationLat, locationLng,
+        water.location.latitude, water.location.longitude);
+      if (distance <= 80) {
+        maxWaterDistance = Math.max(maxWaterDistance, distance);
+      }
+    });
+
+    // Also scan water bodies within 80km
+    waterBodies.forEach(body => {
+      const distance = calculateDistance(locationLat, locationLng,
+        body.location.latitude, body.location.longitude);
+      if (distance <= 80) {
+        maxWaterDistance = Math.max(maxWaterDistance, distance);
+      }
+    });
+
+    // Set final radii with minimum values (convert to meters)
+    setResourceRadii({
+      energy: maxEnergyDistance > 0 ? Math.max(maxEnergyDistance * 1000, 5000) : null,
+      demand: maxDemandDistance > 0 ? Math.max(maxDemandDistance * 1000, 5000) : null,
+      water: maxWaterDistance > 0 ? Math.max(maxWaterDistance * 1000, 5000) : null
+    });
+  };
 
   const handleOptimalLocationClick = (location) => {
     setSelectedOptimalLocation(location);
+    calculateResourceRadii(location);
     onLocationSelect(location);
   };
 
@@ -276,7 +347,75 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
             </Popup>
           </Marker>
         ))}
+
+        {/* Resource Coverage Rings */}
+        {selectedOptimalLocation && resourceRadii.energy && (
+          <Circle
+            center={[selectedOptimalLocation.location.latitude, selectedOptimalLocation.location.longitude]}
+            radius={resourceRadii.energy}
+            pathOptions={{
+              color: '#f59e0b',
+              fillColor: '#f59e0b',
+              fillOpacity: 0.1,
+              weight: 2,
+              dashArray: '5, 5'
+            }}
+          />
+        )}
+        {selectedOptimalLocation && resourceRadii.demand && (
+          <Circle
+            center={[selectedOptimalLocation.location.latitude, selectedOptimalLocation.location.longitude]}
+            radius={resourceRadii.demand}
+            pathOptions={{
+              color: '#dc2626',
+              fillColor: '#dc2626',
+              fillOpacity: 0.1,
+              weight: 2,
+              dashArray: '5, 5'
+            }}
+          />
+        )}
+        {selectedOptimalLocation && resourceRadii.water && (
+          <Circle
+            center={[selectedOptimalLocation.location.latitude, selectedOptimalLocation.location.longitude]}
+            radius={resourceRadii.water}
+            pathOptions={{
+              color: '#0ea5e9',
+              fillColor: '#0ea5e9',
+              fillOpacity: 0.1,
+              weight: 2,
+              dashArray: '5, 5'
+            }}
+          />
+        )}
       </MapContainer>
+
+      {/* Resource Coverage Legend */}
+      {selectedOptimalLocation && (resourceRadii.energy || resourceRadii.demand || resourceRadii.water) && (
+        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[1000] border">
+          <h4 className="font-semibold text-sm mb-2 text-gray-800">Resource Coverage</h4>
+          <div className="space-y-1 text-xs">
+            {resourceRadii.energy && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-400 border border-yellow-600"></div>
+                <span>⚡ Energy Sources</span>
+              </div>
+            )}
+            {resourceRadii.demand && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500 border border-red-600"></div>
+                <span>🏭 Industrial Demand</span>
+              </div>
+            )}
+            {resourceRadii.water && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500 border border-blue-600"></div>
+                <span>💧 Water Sources</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
