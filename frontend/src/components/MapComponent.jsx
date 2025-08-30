@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Star, Zap, Factory, Droplets, MapPin, Loader } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { useApiData } from '../hooks/useApiData';
+import { useLocationBasedData } from '../hooks/useLocationBasedData';
 
 // Fix Leaflet default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -50,8 +50,9 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
     waterBodies, 
     optimalLocations,
     loading, 
-    error 
-  } = useApiData();
+    error,
+    hasSearchLocation
+  } = useLocationBasedData(searchLocation); // Use location-based data
   
   const [selectedOptimalLocation, setSelectedOptimalLocation] = useState(null);
   const gujaratCenter = [22.5, 71.5];
@@ -78,6 +79,41 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
         <div className="text-center space-y-2">
           <p className="text-red-600 font-medium">Failed to load map data</p>
           <p className="text-red-500 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show helpful message when no search location is provided
+  if (!hasSearchLocation) {
+    return (
+      <div className="h-full w-full relative">
+        <MapContainer
+          center={gujaratCenter}
+          zoom={7}
+          style={{ height: '100%', width: '100%' }}
+          className="rounded-lg"
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          />
+          <MapController searchLocation={searchLocation} onLocationSelect={onLocationSelect} />
+        </MapContainer>
+        
+        {/* Overlay message */}
+        <div className="absolute inset-0 bg-white/90 flex items-center justify-center rounded-lg">
+          <div className="text-center space-y-4 p-6 bg-white rounded-lg shadow-lg border max-w-md">
+            <MapPin className="w-12 h-12 text-blue-500 mx-auto" />
+            <h3 className="text-lg font-semibold text-gray-800">Search for a Location</h3>
+            <p className="text-gray-600">
+              Enter a Gujarat city name (like Ahmedabad, Surat, or Vadodara) to see relevant 
+              infrastructure and analyze optimal hydrogen production locations.
+            </p>
+            <p className="text-sm text-blue-600 font-medium">
+              ⚡ Optimized to show only nearby assets for faster performance
+            </p>
+          </div>
         </div>
       </div>
     );

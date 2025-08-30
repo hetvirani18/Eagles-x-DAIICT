@@ -18,7 +18,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return distance;
 };
 
-const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], energySources = [], demandCenters = [] }) => {
+const SearchComponent = ({ onLocationSelect, onClear }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -122,69 +122,10 @@ const SearchComponent = ({ onLocationSelect, onClear, optimalLocations = [], ene
     setShowSuggestions(false);
     setError(null);
     
-    // City coordinates
-    const cityLat = city.location.latitude;
-    const cityLng = city.location.longitude;
-    
-    // Find the nearest relevant location (optimal locations have priority)
-    let nearestLocation = null;
-    let minDistance = Infinity;
-    let locationType = 'city';
-    
-    // Check optimal locations first (highest priority)
-    optimalLocations.forEach((location) => {
-      const distance = calculateDistance(
-        cityLat, cityLng,
-        location.location.latitude, location.location.longitude
-      );
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestLocation = location;
-        locationType = 'optimal';
-      }
-    });
-    
-    // If no optimal location within reasonable distance, check energy sources
-    if (minDistance > 50) { // 50km threshold
-      energySources.forEach((source) => {
-        const distance = calculateDistance(
-          cityLat, cityLng,
-          source.location.latitude, source.location.longitude
-        );
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestLocation = source;
-          locationType = 'energy';
-        }
-      });
-    }
-    
-    // If still no location within reasonable distance, check demand centers
-    if (minDistance > 50) {
-      demandCenters.forEach((center) => {
-        const distance = calculateDistance(
-          cityLat, cityLng,
-          center.location.latitude, center.location.longitude
-        );
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestLocation = center;
-          locationType = 'demand';
-        }
-      });
-    }
-    
-    // Use nearest location if found within 100km, otherwise use city center
-    if (nearestLocation && minDistance < 100) {
-      const coordinates = [nearestLocation.location.latitude, nearestLocation.location.longitude];
-      onLocationSelect(coordinates, nearestLocation, locationType);
-      console.log(`📍 Selected nearest ${locationType} location near ${city.name}:`, nearestLocation.name || 'Optimal Location', `(${minDistance.toFixed(1)}km away)`);
-    } else {
-      // Fallback to city center if no relevant locations nearby
-      const coordinates = [cityLat, cityLng];
-      onLocationSelect(coordinates, city, 'city');
-      console.log('📍 Selected city center:', city.name, coordinates);
-    }
+    // Pass the city coordinates to the parent component
+    const location = [city.location.latitude, city.location.longitude];
+    onLocationSelect(location, city, 'city');
+    console.log('📍 Selected city:', city.name, location);
   };
 
   const clearSearch = () => {

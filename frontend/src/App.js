@@ -8,19 +8,11 @@ import { Button } from './components/ui/button';
 import { Separator } from './components/ui/separator';
 import { Badge } from './components/ui/badge';
 import { Layers, Info, Star, Zap, Factory, Droplets } from 'lucide-react';
-import { useApiData } from './hooks/useApiData';
 
 function App() {
   const [searchLocation, setSearchLocation] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
-  
-  // Get data for search functionality
-  const { 
-    energySources, 
-    demandCenters, 
-    optimalLocations 
-  } = useApiData();
 
   const handleLocationSelect = (location, locationData, locationType) => {
     setSearchLocation(location);
@@ -68,9 +60,6 @@ function App() {
                 <SearchComponent 
                   onLocationSelect={handleLocationSelect}
                   onClear={clearSearch}
-                  optimalLocations={optimalLocations}
-                  energySources={energySources}
-                  demandCenters={demandCenters}
                 />
               </div>
             </Card>

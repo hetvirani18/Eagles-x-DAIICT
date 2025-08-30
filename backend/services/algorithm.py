@@ -10,7 +10,26 @@ import asyncio
 class HydrogenLocationOptimizer:
     def __init__(self):
         self.db = get_database()
+        # Note: Geospatial indexes will be created on first use
         
+    async def ensure_geospatial_indexes(self):
+        """Ensure geospatial indexes exist for location-based queries"""
+        try:
+            collections = [
+                "energy_sources", "demand_centers", "water_sources", 
+                "water_bodies", "gas_pipelines", "road_networks"
+            ]
+            
+            for collection_name in collections:
+                collection = getattr(self.db, collection_name)
+                # Create 2dsphere index on location field for geospatial queries
+                await collection.create_index([("location", "2dsphere")])
+                
+            print("✅ Geospatial indexes ensured for optimal performance")
+            
+        except Exception as e:
+            print(f"⚠️ Warning: Could not create geospatial indexes: {e}")
+            
     def calculate_distance(self, point1: LocationPoint, point2: LocationPoint) -> float:
         """Calculate distance between two points using Haversine formula"""
         R = 6371  # Earth's radius in kilometers
@@ -195,19 +214,68 @@ class HydrogenLocationOptimizer:
             'roi_percentage': min(25, max(8, (overall_score - 150) / 10))
         }
     
+    async def get_nearby_assets(self, location: LocationPoint, collection_name: str, 
+                              max_distance_km: float = 200) -> List[dict]:
+        """Get assets within specified distance from location using geospatial query"""
+        try:
+            # Ensure geospatial indexes exist
+            collection = getattr(self.db, collection_name)
+            try:
+                await collection.create_index([("location", "2dsphere")])
+            except Exception:
+                pass  # Index may already exist
+            
+            # MongoDB geospatial query to find nearby assets
+            query = {
+                "location": {
+                    "$near": {
+                        "$geometry": {
+                            "type": "Point",
+                            "coordinates": [location.longitude, location.latitude]
+                        },
+                        "$maxDistance": max_distance_km * 1000  # Convert to meters
+                    }
+                }
+            }
+            
+            # MongoDB automatically sorts by distance when using $near, limit to top 10
+            nearby_assets = await collection.find(query).limit(10).to_list(10)
+            return nearby_assets
+            
+        except Exception as e:
+            # Fallback to fetching all if geospatial query fails
+            print(f"Geospatial query failed for {collection_name}, using fallback: {e}")
+            collection = getattr(self.db, collection_name)
+            all_assets = await collection.find().to_list(100)
+            
+            # Manual distance sorting as fallback
+            assets_with_distance = []
+            for asset in all_assets:
+                if 'location' in asset and 'latitude' in asset['location'] and 'longitude' in asset['location']:
+                    distance = self.calculate_distance(
+                        location, 
+                        LocationPoint(latitude=asset['location']['latitude'], longitude=asset['location']['longitude'])
+                    )
+                    if distance <= max_distance_km:
+                        assets_with_distance.append((asset, distance))
+            
+            # Sort by distance and return top 10
+            assets_with_distance.sort(key=lambda x: x[1])
+            return [asset for asset, distance in assets_with_distance[:10]]
+
     async def analyze_location(self, location: LocationPoint, 
                              weights: WeightedAnalysisRequest = None) -> LocationPoint:
-        """Comprehensive location analysis"""
+        """Optimized location analysis - only fetches nearby assets"""
         if not weights:
             weights = WeightedAnalysisRequest(bounds=None)
             
-        # Fetch all data from database
-        energy_sources_data = await self.db.energy_sources.find().to_list(1000)
-        demand_centers_data = await self.db.demand_centers.find().to_list(1000)
-        water_sources_data = await self.db.water_sources.find().to_list(1000)
-        water_bodies_data = await self.db.water_bodies.find().to_list(1000)
-        gas_pipelines_data = await self.db.gas_pipelines.find().to_list(1000)
-        road_networks_data = await self.db.road_networks.find().to_list(1000)
+        # Fetch only nearby data from database (MAJOR PERFORMANCE IMPROVEMENT)
+        energy_sources_data = await self.get_nearby_assets(location, "energy_sources", 150)
+        demand_centers_data = await self.get_nearby_assets(location, "demand_centers", 100) 
+        water_sources_data = await self.get_nearby_assets(location, "water_sources", 80)
+        water_bodies_data = await self.get_nearby_assets(location, "water_bodies", 80)
+        gas_pipelines_data = await self.get_nearby_assets(location, "gas_pipelines", 50)
+        road_networks_data = await self.get_nearby_assets(location, "road_networks", 30)
         
         # Convert to Pydantic models
         energy_sources = [EnergySource(**item) for item in energy_sources_data]
@@ -250,4 +318,83 @@ class HydrogenLocationOptimizer:
             'nearest_pipeline': pipeline_info,
             'nearest_transport': transport_info,
             'production_metrics': production_metrics
+        }
+    
+    async def analyze_single_location_optimized(self, location: LocationPoint, 
+                                              weights: WeightedAnalysisRequest = None) -> dict:
+        """
+        Ultra-optimized analysis for single location queries
+        Only processes the most relevant nearby assets
+        """
+        if not weights:
+            weights = WeightedAnalysisRequest(bounds=None)
+            
+        # Use concurrent queries with smaller radius for faster results and STRICT FILTERING
+        tasks = [
+            self.get_nearby_assets(location, "energy_sources", 100),  # Matches frontend: 100km
+            self.get_nearby_assets(location, "demand_centers", 60),   # Matches frontend: 60km  
+            self.get_nearby_assets(location, "water_sources", 50),    # Matches frontend: 50km
+            self.get_nearby_assets(location, "water_bodies", 50),     # Matches frontend: 50km
+            self.get_nearby_assets(location, "gas_pipelines", 40),    # Matches frontend: 40km
+            self.get_nearby_assets(location, "road_networks", 25)     # Matches frontend: 25km
+        ]
+        
+        # Run all queries concurrently for maximum speed
+        results = await asyncio.gather(*tasks)
+        
+        (energy_sources_data, demand_centers_data, water_sources_data, 
+         water_bodies_data, gas_pipelines_data, road_networks_data) = results
+        
+        # Convert to Pydantic models (only process top 3 closest for consistency with frontend)
+        energy_sources = [EnergySource(**item) for item in energy_sources_data[:3]]  # Top 3 only
+        demand_centers = [DemandCenter(**item) for item in demand_centers_data[:3]]   # Top 3 only
+        water_sources = [WaterSource(**item) for item in water_sources_data[:3]]      # Top 3 only
+        water_bodies = [WaterBody(**item) for item in water_bodies_data[:2]]          # Top 2 only
+        gas_pipelines = [GasPipeline(**item) for item in gas_pipelines_data[:2]]      # Top 2 only
+        road_networks = [RoadNetwork(**item) for item in road_networks_data[:2]]      # Top 2 only
+        
+        # Calculate individual scores (same logic, faster execution)
+        energy_score, energy_info = await self.calculate_energy_score(location, energy_sources)
+        demand_score, demand_info = await self.calculate_demand_score(location, demand_centers) 
+        water_score, water_info = await self.calculate_water_score(location, water_sources, water_bodies)
+        pipeline_score, pipeline_info = await self.calculate_pipeline_score(location, gas_pipelines)
+        transport_score, transport_info = await self.calculate_transport_score(location, road_networks)
+        
+        # Calculate weighted overall score
+        overall_score = (
+            energy_score * weights.energy_weight +
+            demand_score * weights.demand_weight + 
+            water_score * weights.water_weight +
+            pipeline_score * weights.pipeline_weight +
+            transport_score * weights.transport_weight
+        )
+        
+        # Production metrics
+        production_metrics = await self.calculate_production_metrics(overall_score, energy_info, demand_info)
+        
+        return {
+            'location': location,
+            'overall_score': round(overall_score, 1),
+            'energy_score': round(energy_score, 1),
+            'demand_score': round(demand_score, 1),
+            'water_score': round(water_score, 1),
+            'pipeline_score': round(pipeline_score, 1),
+            'transport_score': round(transport_score, 1),
+            'nearest_energy': energy_info,
+            'nearest_demand': demand_info,
+            'nearest_water': water_info,
+            'nearest_pipeline': pipeline_info,
+            'nearest_transport': transport_info,
+            'production_metrics': production_metrics,
+            'optimization_info': {
+                'query_type': 'single_location_optimized',
+                'assets_processed': {
+                    'energy_sources': len(energy_sources),
+                    'demand_centers': len(demand_centers),
+                    'water_sources': len(water_sources),
+                    'water_bodies': len(water_bodies),
+                    'gas_pipelines': len(gas_pipelines),
+                    'road_networks': len(road_networks)
+                }
+            }
         }
