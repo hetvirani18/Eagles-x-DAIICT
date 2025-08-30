@@ -10,7 +10,16 @@ import asyncio
 from contextlib import asynccontextmanager
 
 # Import our models and services
-from models import *
+from models import (
+    EnergySource, EnergySourceCreate,
+    DemandCenter, DemandCenterCreate,
+    WaterSource, WaterSourceCreate,
+    WaterBody, WaterBodyCreate,
+    GasPipeline, GasPipelineCreate,
+    RoadNetwork, RoadNetworkCreate,
+    City,
+    LocationPoint, SearchBounds, WeightedAnalysisRequest,
+)
 from database import connect_to_mongo, close_mongo_connection, get_database
 from services.algorithm import HydrogenLocationOptimizer
 
@@ -19,6 +28,11 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Initialize algorithm service
 optimizer = HydrogenLocationOptimizer()
+
+# Common literals
+DEFAULT_PIPELINE_NETWORK = "Gujarat Gas Distribution Network"
+DEFAULT_PIPELINE_OPERATOR = "Gujarat Gas Limited"
+ROAD_TYPE_NATIONAL_HIGHWAY = "National Highway"
 
 # Modern lifespan event handler
 @asynccontextmanager
@@ -181,30 +195,43 @@ async def calculate_optimal_locations(
     weights: Optional[WeightedAnalysisRequest] = None,
     limit: int = Query(10, description="Maximum number of locations to return")
 ):
-    """Calculate optimal locations within specified bounds using grid analysis"""
+    """Calculate optimal locations within specified bounds using grid analysis (parallelized)."""
     try:
-        optimal_locations = []
-        
+        # Ensure weights carries bounds for DB-side filtering inside optimizer
+        if not weights:
+            weights = WeightedAnalysisRequest(bounds=bounds)
+        elif not weights.bounds:
+            weights.bounds = bounds
+
         # Create a grid within bounds for analysis
         lat_step = (bounds.north - bounds.south) / 20  # 20x20 grid
         lng_step = (bounds.east - bounds.west) / 20
-        
-        # Analyze grid points
-        for i in range(10):  # Reduced for performance
+
+        candidates: List[LocationPoint] = []
+        for i in range(10):  # 10x10 sampled grid for performance
             for j in range(10):
-                lat = bounds.south + (i * lat_step * 2)  # Skip some points
+                lat = bounds.south + (i * lat_step * 2)  # Skip alternate points
                 lng = bounds.west + (j * lng_step * 2)
-                
-                location = LocationPoint(latitude=lat, longitude=lng)
-                analysis = await optimizer.analyze_location(location, weights)
-                
-                if analysis['overall_score'] > 200:  # Only include good locations
-                    optimal_locations.append(analysis)
-        
+                candidates.append(LocationPoint(latitude=lat, longitude=lng))
+
+        # Run analyses with bounded concurrency
+        sem = asyncio.Semaphore(10)
+
+        async def run_analysis(loc: LocationPoint):
+            async with sem:
+                try:
+                    return await optimizer.analyze_location(loc, weights)
+                except Exception as ex:
+                    logger.warning(f"Analysis failed for {loc}: {ex}")
+                    return None
+
+        results = await asyncio.gather(*(run_analysis(c) for c in candidates))
+        optimal_locations = [r for r in results if r and r.get('overall_score', 0) > 200]
+
         # Sort by score and return top results
         optimal_locations.sort(key=lambda x: x['overall_score'], reverse=True)
         return optimal_locations[:limit]
-        
+
     except Exception as e:
         logging.error(f"Optimal location calculation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Calculation failed: {str(e)}")
@@ -246,14 +273,14 @@ async def get_pre_calculated_optimal_locations():
                 "type": "River"
             },
             "nearest_pipeline": {
-                "nearest_pipeline": "Gujarat Gas Distribution Network",
+                "nearest_pipeline": DEFAULT_PIPELINE_NETWORK,
                 "distance_km": 18.5,
-                "operator": "Gujarat Gas Limited"
+                "operator": DEFAULT_PIPELINE_OPERATOR
             },
             "nearest_transport": {
                 "nearest_road": "Golden Quadrilateral (Gujarat Section)",
                 "distance_km": 5.2,
-                "type": "National Highway",
+                "type": ROAD_TYPE_NATIONAL_HIGHWAY,
                 "connectivity_score": 98
             }
         },
@@ -289,14 +316,14 @@ async def get_pre_calculated_optimal_locations():
                 "type": "Canal"
             },
             "nearest_pipeline": {
-                "nearest_pipeline": "Gujarat Gas Distribution Network",
+                "nearest_pipeline": DEFAULT_PIPELINE_NETWORK,
                 "distance_km": 12.8,
-                "operator": "Gujarat Gas Limited"
+                "operator": DEFAULT_PIPELINE_OPERATOR
             },
             "nearest_transport": {
                 "nearest_road": "NH-27 (Porbandar-Silchar Highway)",
                 "distance_km": 8.9,
-                "type": "National Highway",
+                "type": ROAD_TYPE_NATIONAL_HIGHWAY,
                 "connectivity_score": 88
             }
         },
@@ -332,14 +359,14 @@ async def get_pre_calculated_optimal_locations():
                 "type": "Groundwater"
             },
             "nearest_pipeline": {
-                "nearest_pipeline": "Gujarat Gas Distribution Network",
+                "nearest_pipeline": DEFAULT_PIPELINE_NETWORK,
                 "distance_km": 15.7,
-                "operator": "Gujarat Gas Limited"
+                "operator": DEFAULT_PIPELINE_OPERATOR
             },
             "nearest_transport": {
                 "nearest_road": "NH-27 (Porbandar-Silchar Highway)",
                 "distance_km": 6.3,
-                "type": "National Highway",
+                "type": ROAD_TYPE_NATIONAL_HIGHWAY,
                 "connectivity_score": 88
             }
         },
@@ -382,7 +409,7 @@ async def get_pre_calculated_optimal_locations():
             "nearest_transport": {
                 "nearest_road": "Golden Quadrilateral (Gujarat Section)",
                 "distance_km": 3.4,
-                "type": "National Highway",
+                "type": ROAD_TYPE_NATIONAL_HIGHWAY,
                 "connectivity_score": 98
             }
         },
@@ -425,7 +452,7 @@ async def get_pre_calculated_optimal_locations():
             "nearest_transport": {
                 "nearest_road": "NH-48 (Ahmedabad-Mumbai Highway)",
                 "distance_km": 4.2,
-                "type": "National Highway",
+                "type": ROAD_TYPE_NATIONAL_HIGHWAY,
                 "connectivity_score": 95
             }
         }

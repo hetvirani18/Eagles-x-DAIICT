@@ -191,7 +191,8 @@ class SearchBounds(BaseModel):
     west: float
 
 class WeightedAnalysisRequest(BaseModel):
-    bounds: SearchBounds
+    # Bounds are optional; when omitted, analysis uses global defaults
+    bounds: Optional[SearchBounds] = None
     energy_weight: float = 0.25
     demand_weight: float = 0.25
     water_weight: float = 0.20

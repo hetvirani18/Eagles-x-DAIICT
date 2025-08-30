@@ -44,9 +44,9 @@ class HydrogenLocationOptimizer:
             return 0
         return max(0, 100 * (1 - distance / max_distance))
     
-    async def get_nearest_asset(self, location: LocationPoint, assets: List, 
-                               route_based: bool = False) -> Tuple[dict, float]:
-        """Find nearest asset to a location"""
+    def get_nearest_asset(self, location: LocationPoint, assets: List,
+                          route_based: bool = False) -> Tuple[dict, float]:
+        """Find nearest asset to a location (sync)"""
         min_distance = float('inf')
         nearest_asset = None
         
@@ -62,13 +62,13 @@ class HydrogenLocationOptimizer:
                 
         return nearest_asset, min_distance
     
-    async def calculate_energy_score(self, location: LocationPoint, 
-                                   energy_sources: List[EnergySource]) -> Tuple[float, dict]:
+    def calculate_energy_score(self, location: LocationPoint,
+                               energy_sources: List[EnergySource]) -> Tuple[float, dict]:
         """Calculate energy proximity score"""
         if not energy_sources:
             return 0, {}
             
-        nearest_energy, distance = await self.get_nearest_asset(location, energy_sources)
+        nearest_energy, distance = self.get_nearest_asset(location, energy_sources)
         score = self.score_proximity(distance, max_distance=150)
         
         # Bonus for high capacity and low cost
@@ -84,13 +84,13 @@ class HydrogenLocationOptimizer:
             'capacity_mw': nearest_energy.capacity_mw if nearest_energy else None
         }
     
-    async def calculate_demand_score(self, location: LocationPoint,
-                                   demand_centers: List[DemandCenter]) -> Tuple[float, dict]:
+    def calculate_demand_score(self, location: LocationPoint,
+                               demand_centers: List[DemandCenter]) -> Tuple[float, dict]:
         """Calculate demand proximity score"""
         if not demand_centers:
             return 0, {}
             
-        nearest_demand, distance = await self.get_nearest_asset(location, demand_centers)
+        nearest_demand, distance = self.get_nearest_asset(location, demand_centers)
         score = self.score_proximity(distance, max_distance=100)
         
         # Bonus for high demand and willingness to pay premium
@@ -106,16 +106,16 @@ class HydrogenLocationOptimizer:
             'demand_mt_year': nearest_demand.hydrogen_demand_mt_year if nearest_demand else None
         }
     
-    async def calculate_water_score(self, location: LocationPoint,
-                                  water_sources: List[WaterSource],
-                                  water_bodies: List[WaterBody]) -> Tuple[float, dict]:
+    def calculate_water_score(self, location: LocationPoint,
+                              water_sources: List[WaterSource],
+                              water_bodies: List[WaterBody]) -> Tuple[float, dict]:
         """Calculate water access score"""
         all_water_assets = water_sources + water_bodies
         
         if not all_water_assets:
             return 0, {}
             
-        nearest_water, distance = await self.get_nearest_asset(location, all_water_assets)
+        nearest_water, distance = self.get_nearest_asset(location, all_water_assets)
         score = self.score_proximity(distance, max_distance=80)
         
         # Bonus for high capacity and quality
@@ -133,13 +133,13 @@ class HydrogenLocationOptimizer:
             'type': getattr(nearest_water, 'type', None) if nearest_water else None
         }
     
-    async def calculate_pipeline_score(self, location: LocationPoint,
-                                     gas_pipelines: List[GasPipeline]) -> Tuple[float, dict]:
+    def calculate_pipeline_score(self, location: LocationPoint,
+                                 gas_pipelines: List[GasPipeline]) -> Tuple[float, dict]:
         """Calculate gas pipeline proximity score"""
         if not gas_pipelines:
             return 0, {}
             
-        nearest_pipeline, distance = await self.get_nearest_asset(location, gas_pipelines, route_based=True)
+        nearest_pipeline, distance = self.get_nearest_asset(location, gas_pipelines, route_based=True)
         score = self.score_proximity(distance, max_distance=50)
         
         # Bonus for high capacity pipelines
@@ -153,13 +153,13 @@ class HydrogenLocationOptimizer:
             'operator': nearest_pipeline.operator if nearest_pipeline else None
         }
     
-    async def calculate_transport_score(self, location: LocationPoint,
-                                      road_networks: List[RoadNetwork]) -> Tuple[float, dict]:
+    def calculate_transport_score(self, location: LocationPoint,
+                                  road_networks: List[RoadNetwork]) -> Tuple[float, dict]:
         """Calculate transport connectivity score"""
         if not road_networks:
             return 0, {}
             
-        nearest_road, distance = await self.get_nearest_asset(location, road_networks, route_based=True)
+        nearest_road, distance = self.get_nearest_asset(location, road_networks, route_based=True)
         score = self.score_proximity(distance, max_distance=30)
         
         # Bonus for high connectivity roads
@@ -174,11 +174,11 @@ class HydrogenLocationOptimizer:
             'connectivity_score': nearest_road.connectivity_score if nearest_road else None
         }
 
-    async def calculate_economic_viability_score(self, location: LocationPoint,
-                                               nearest_energy: EnergySource = None,
-                                               nearest_demand: DemandCenter = None,
-                                               nearest_water: WaterSource = None,
-                                               *, discount_rate: float = 0.12, horizon_years: int = 10) -> Tuple[float, dict]:
+    def calculate_economic_viability_score(self, location: LocationPoint,
+                                           nearest_energy: EnergySource = None,
+                                           nearest_demand: DemandCenter = None,
+                                           nearest_water: WaterSource = None,
+                                           *, discount_rate: float = 0.12, horizon_years: int = 10) -> Tuple[float, dict]:
         """Calculate economic viability score based on financial metrics"""
         
         if not (nearest_energy and nearest_demand and nearest_water):
@@ -190,97 +190,21 @@ class HydrogenLocationOptimizer:
             analysis = self.economic_calculator.calculate_comprehensive_economics(
                 location, nearest_energy, nearest_demand, nearest_water, 1000, discount_rate=discount_rate, horizon_years=horizon_years
             )
-            
-            # Economic scoring factors (0-100 each)
-            
-            # 1. ROI Score (0-100) - Higher ROI = better score
-            roi_score = 0
-            if analysis.roi_percentage > 0:
-                if analysis.roi_percentage >= 25:
-                    roi_score = 100
-                elif analysis.roi_percentage >= 20:
-                    roi_score = 90
-                elif analysis.roi_percentage >= 15:
-                    roi_score = 75
-                elif analysis.roi_percentage >= 10:
-                    roi_score = 50
-                elif analysis.roi_percentage >= 5:
-                    roi_score = 25
-                else:
-                    roi_score = 10
-            
-            # 2. Payback Period Score (0-100) - Shorter payback = better score
-            payback_score = 0
-            if analysis.payback_period_years > 0:
-                if analysis.payback_period_years <= 4:
-                    payback_score = 100
-                elif analysis.payback_period_years <= 6:
-                    payback_score = 80
-                elif analysis.payback_period_years <= 8:
-                    payback_score = 60
-                elif analysis.payback_period_years <= 10:
-                    payback_score = 40
-                elif analysis.payback_period_years <= 12:
-                    payback_score = 20
-                else:
-                    payback_score = 5
-            
-            # 3. Production Cost Score (0-100) - Lower cost = better score
-            cost_score = 0
-            if analysis.hydrogen_selling_price_per_kg > 0:
-                if analysis.hydrogen_selling_price_per_kg <= 250:
-                    cost_score = 100
-                elif analysis.hydrogen_selling_price_per_kg <= 300:
-                    cost_score = 80
-                elif analysis.hydrogen_selling_price_per_kg <= 350:
-                    cost_score = 60
-                elif analysis.hydrogen_selling_price_per_kg <= 400:
-                    cost_score = 40
-                elif analysis.hydrogen_selling_price_per_kg <= 450:
-                    cost_score = 20
-                else:
-                    cost_score = 5
-            
-            # 4. NPV Score (0-100) - Higher NPV = better score
-            npv_score = 0
-            if analysis.npv_10_years > 0:
-                npv_crores = analysis.npv_10_years / 1_00_00_000
-                if npv_crores >= 20:
-                    npv_score = 100
-                elif npv_crores >= 15:
-                    npv_score = 85
-                elif npv_crores >= 10:
-                    npv_score = 70
-                elif npv_crores >= 5:
-                    npv_score = 50
-                elif npv_crores >= 1:
-                    npv_score = 30
-                else:
-                    npv_score = 10
-            
-            # 5. Profit Margin Score (0-100)
+            # Economic scoring via helpers
+            roi_score = self._score_roi(analysis.roi_percentage)
+            payback_score = self._score_payback(analysis.payback_period_years)
+            cost_score = self._score_cost(analysis.hydrogen_selling_price_per_kg)
+            npv_score = self._score_npv(analysis.npv_10_years)
             profit_margin = (analysis.annual_profit / analysis.annual_revenue) * 100 if analysis.annual_revenue > 0 else 0
-            margin_score = 0
-            if profit_margin >= 40:
-                margin_score = 100
-            elif profit_margin >= 30:
-                margin_score = 80
-            elif profit_margin >= 20:
-                margin_score = 60
-            elif profit_margin >= 10:
-                margin_score = 40
-            elif profit_margin >= 5:
-                margin_score = 20
-            else:
-                margin_score = 5
-            
+            margin_score = self._score_margin(profit_margin)
+
             # Weighted combination of economic factors
             economic_score = (
-                roi_score * 0.25 +          # 25% weight on ROI
-                payback_score * 0.25 +      # 25% weight on payback
-                cost_score * 0.20 +         # 20% weight on production cost
-                npv_score * 0.15 +          # 15% weight on NPV
-                margin_score * 0.15         # 15% weight on profit margin
+                roi_score * 0.25
+                + payback_score * 0.25
+                + cost_score * 0.20
+                + npv_score * 0.15
+                + margin_score * 0.15
             )
             
             return economic_score, {
@@ -321,13 +245,12 @@ class HydrogenLocationOptimizer:
         else:
             return 'D (Very Poor)'
     
-    async def calculate_production_metrics(self, overall_score: float, 
-                                         energy_info: dict, demand_info: dict,
-                                         location: LocationPoint,
-                                         nearest_energy: EnergySource = None,
-                                         nearest_demand: DemandCenter = None,
-                                         nearest_water: WaterSource = None,
-                                         *, discount_rate: float = 0.12, horizon_years: int = 10) -> dict:
+    def calculate_production_metrics(self, overall_score: float,
+                                     location: LocationPoint,
+                                     nearest_energy: EnergySource = None,
+                                     nearest_demand: DemandCenter = None,
+                                     nearest_water: WaterSource = None,
+                                     *, discount_rate: float = 0.12, horizon_years: int = 10) -> dict:
         """Calculate detailed production cost and capacity with economic analysis"""
         
         # If we have actual infrastructure data, use detailed economic calculation
@@ -384,7 +307,6 @@ class HydrogenLocationOptimizer:
             except Exception as e:
                 print(f"Economic calculation failed: {e}")
                 # Fallback to simple calculation
-                pass
         
         # Fallback: Simple calculation based on score
         base_cost = 350  # Base cost per kg in INR
@@ -409,19 +331,30 @@ class HydrogenLocationOptimizer:
             'simplified_calculation': True
         }
     
-    async def analyze_location(self, location: LocationPoint, 
-                             weights: WeightedAnalysisRequest = None) -> LocationPoint:
+    async def analyze_location(self, location: LocationPoint,
+                               weights: WeightedAnalysisRequest = None) -> dict:
         """Comprehensive location analysis"""
         if not weights:
             weights = WeightedAnalysisRequest(bounds=None)
             
-        # Fetch all data from database
-        energy_sources_data = await self.db.energy_sources.find().to_list(1000)
-        demand_centers_data = await self.db.demand_centers.find().to_list(1000)
-        water_sources_data = await self.db.water_sources.find().to_list(1000)
-        water_bodies_data = await self.db.water_bodies.find().to_list(1000)
-        gas_pipelines_data = await self.db.gas_pipelines.find().to_list(1000)
-        road_networks_data = await self.db.road_networks.find().to_list(1000)
+        # Optional bounds-based query to reduce dataset size
+        bounds_query = {}
+        if weights and weights.bounds:
+            b = weights.bounds
+            bounds_query = {
+                "location.latitude": {"$gte": b.south, "$lte": b.north},
+                "location.longitude": {"$gte": b.west, "$lte": b.east},
+            }
+
+        # Fetch all data from database with projections
+        energy_sources_data, demand_centers_data, water_sources_data, water_bodies_data, gas_pipelines_data, road_networks_data = await asyncio.gather(
+            self.db.energy_sources.find(bounds_query, {"_id": 0}).to_list(1000),
+            self.db.demand_centers.find(bounds_query, {"_id": 0}).to_list(1000),
+            self.db.water_sources.find(bounds_query, {"_id": 0}).to_list(1000),
+            self.db.water_bodies.find(bounds_query, {"_id": 0}).to_list(1000),
+            self.db.gas_pipelines.find({}, {"_id": 0}).to_list(1000),
+            self.db.road_networks.find({}, {"_id": 0}).to_list(1000),
+        )
         
         # Convert to Pydantic models
         energy_sources = [EnergySource(**item) for item in energy_sources_data]
@@ -430,71 +363,93 @@ class HydrogenLocationOptimizer:
         water_bodies = [WaterBody(**item) for item in water_bodies_data]
         gas_pipelines = [GasPipeline(**item) for item in gas_pipelines_data]
         road_networks = [RoadNetwork(**item) for item in road_networks_data]
-        
+
+        return self.analyze_with_assets(
+            location,
+            weights,
+            energy_sources,
+            demand_centers,
+            water_sources,
+            water_bodies,
+            gas_pipelines,
+            road_networks,
+        )
+
+    def analyze_with_assets(
+        self,
+        location: LocationPoint,
+        weights: WeightedAnalysisRequest,
+        energy_sources: List[EnergySource],
+        demand_centers: List[DemandCenter],
+        water_sources: List[WaterSource],
+        water_bodies: List[WaterBody],
+        gas_pipelines: List[GasPipeline],
+        road_networks: List[RoadNetwork],
+    ) -> dict:
+        """Analyze location using provided assets (no DB fetch)."""
         # Calculate individual scores
-        energy_score, energy_info = await self.calculate_energy_score(location, energy_sources)
-        demand_score, demand_info = await self.calculate_demand_score(location, demand_centers) 
-        water_score, water_info = await self.calculate_water_score(location, water_sources, water_bodies)
-        pipeline_score, pipeline_info = await self.calculate_pipeline_score(location, gas_pipelines)
-        transport_score, transport_info = await self.calculate_transport_score(location, road_networks)
-        
+        energy_score, energy_info = self.calculate_energy_score(location, energy_sources)
+        demand_score, demand_info = self.calculate_demand_score(location, demand_centers)
+        water_score, water_info = self.calculate_water_score(location, water_sources, water_bodies)
+        pipeline_score, pipeline_info = self.calculate_pipeline_score(location, gas_pipelines)
+        transport_score, transport_info = self.calculate_transport_score(location, road_networks)
+
         # Determine nearest real assets to the requested location
         nearest_energy_asset = None
         nearest_demand_asset = None
         nearest_water_asset = None
 
         if energy_sources:
-            nearest_energy_asset, _ = await self.get_nearest_asset(location, energy_sources)
+            nearest_energy_asset, _ = self.get_nearest_asset(location, energy_sources)
         if demand_centers:
-            nearest_demand_asset, _ = await self.get_nearest_asset(location, demand_centers)
+            nearest_demand_asset, _ = self.get_nearest_asset(location, demand_centers)
         if water_sources:
-            nearest_water_asset, _ = await self.get_nearest_asset(location, water_sources)
+            nearest_water_asset, _ = self.get_nearest_asset(location, water_sources)
 
         # Calculate economic viability score using nearest assets
-        economic_score, economic_info = await self.calculate_economic_viability_score(
+        economic_score, economic_info = self.calculate_economic_viability_score(
             location,
             nearest_energy_asset,
             nearest_demand_asset,
-            nearest_water_asset
+            nearest_water_asset,
         )
-        
+
         # Enhanced weighted overall score (now includes economic viability)
         infrastructure_score = (
-            energy_score * weights.energy_weight +
-            demand_score * weights.demand_weight + 
-            water_score * weights.water_weight +
-            pipeline_score * weights.pipeline_weight +
-            transport_score * weights.transport_weight
+            energy_score * weights.energy_weight
+            + demand_score * weights.demand_weight
+            + water_score * weights.water_weight
+            + pipeline_score * weights.pipeline_weight
+            + transport_score * weights.transport_weight
         )
-        
+
         # Final score combines infrastructure (70%) and economics (30%)
         overall_score = (infrastructure_score * 0.70) + (economic_score * 0.30)
-        
+
         # Production metrics with economic analysis
-        production_metrics = await self.calculate_production_metrics(
-            overall_score, energy_info, demand_info, location,
+        production_metrics = self.calculate_production_metrics(
+            overall_score,
+            location,
             nearest_energy_asset,
             nearest_demand_asset,
-            nearest_water_asset
+            nearest_water_asset,
         )
-        
+
         # Determine overall grade based on final score
         overall_grade = self._get_overall_grade(overall_score)
-        
+
         return {
             'location': location,
             'overall_score': round(overall_score, 1),
             'infrastructure_score': round(infrastructure_score, 1),
             'economic_score': round(economic_score, 1),
             'overall_grade': overall_grade,
-            
             # Individual infrastructure scores
             'energy_score': round(energy_score, 1),
             'demand_score': round(demand_score, 1),
             'water_score': round(water_score, 1),
             'pipeline_score': round(pipeline_score, 1),
             'transport_score': round(transport_score, 1),
-            
             # Detailed information
             'nearest_energy': energy_info,
             'nearest_demand': demand_info,
@@ -502,7 +457,7 @@ class HydrogenLocationOptimizer:
             'nearest_pipeline': pipeline_info,
             'nearest_transport': transport_info,
             'economic_analysis': economic_info,
-            'production_metrics': production_metrics
+            'production_metrics': production_metrics,
         }
     
     def _get_overall_grade(self, score: float) -> str:
@@ -521,3 +476,43 @@ class HydrogenLocationOptimizer:
             return 'B (High Risk Investment)'
         else:
             return 'C (Not Recommended)'
+
+    # --- Economic scoring helper functions ---
+    def _score_roi(self, roi_percentage: float) -> float:
+        if roi_percentage <= 0:
+            return 0
+        for threshold, score in [(25, 100), (20, 90), (15, 75), (10, 50), (5, 25)]:
+            if roi_percentage >= threshold:
+                return score
+        return 10
+
+    def _score_payback(self, years: float) -> float:
+        if years <= 0:
+            return 0
+        for threshold, score in [(4, 100), (6, 80), (8, 60), (10, 40), (12, 20)]:
+            if years <= threshold:
+                return score
+        return 5
+
+    def _score_cost(self, price_per_kg: float) -> float:
+        if price_per_kg <= 0:
+            return 0
+        for threshold, score in [(250, 100), (300, 80), (350, 60), (400, 40), (450, 20)]:
+            if price_per_kg <= threshold:
+                return score
+        return 5
+
+    def _score_npv(self, npv_10_years: float) -> float:
+        if npv_10_years <= 0:
+            return 0
+        crores = npv_10_years / 1_00_00_000
+        for threshold, score in [(20, 100), (15, 85), (10, 70), (5, 50), (1, 30)]:
+            if crores >= threshold:
+                return score
+        return 10
+
+    def _score_margin(self, margin_pct: float) -> float:
+        for threshold, score in [(40, 100), (30, 80), (20, 60), (10, 40), (5, 20)]:
+            if margin_pct >= threshold:
+                return score
+        return 5
