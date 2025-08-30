@@ -133,20 +133,31 @@ class SiteAnalysisService {
    * Calculate comprehensive score for a single site
    */
   async calculateSiteScore(site, resources) {
-    const point = turf.point(site.coordinates);
-    
-    // Find nearest resources and calculate individual scores
-    const nearestGreenEnergy = this.findNearestResource(point, resources.greenEnergy);
-    const nearestWaterBody = this.findNearestResource(point, resources.waterBodies);
-    const nearestIndustry = this.findNearestResource(point, resources.industries);
-    const nearestTransportation = this.findNearestResource(point, resources.transportation);
+    try {
+      // Validate site coordinates
+      if (!Array.isArray(site.coordinates) || site.coordinates.length !== 2) {
+        throw new Error('Invalid site coordinates');
+      }
+      
+      const [lng, lat] = site.coordinates;
+      if (typeof lng !== 'number' || typeof lat !== 'number' || isNaN(lng) || isNaN(lat)) {
+        throw new Error('Site coordinates must be valid numbers');
+      }
 
-    // Calculate individual scores (0-100 scale)
-    const greenEnergyScore = this.calculateProximityScore(
-      nearestGreenEnergy.distance, 
-      this.maxDistances.greenEnergy,
-      nearestGreenEnergy.resource?.capacity || 0
-    );
+      const point = turf.point([lng, lat]);
+      
+      // Find nearest resources and calculate individual scores
+      const nearestGreenEnergy = this.findNearestResource(point, resources.greenEnergy);
+      const nearestWaterBody = this.findNearestResource(point, resources.waterBodies);
+      const nearestIndustry = this.findNearestResource(point, resources.industries);
+      const nearestTransportation = this.findNearestResource(point, resources.transportation);
+
+      // Calculate individual scores (0-100 scale)
+      const greenEnergyScore = this.calculateProximityScore(
+        nearestGreenEnergy.distance, 
+        this.maxDistances.greenEnergy,
+        nearestGreenEnergy.resource?.capacity || 0
+      );
     
     const waterAccessScore = this.calculateProximityScore(
       nearestWaterBody.distance,
@@ -191,6 +202,10 @@ class SiteAnalysisService {
         transportation: nearestTransportation
       }
     };
+    } catch (error) {
+      console.error('Error calculating site score:', error);
+      throw error;
+    }
   }
 
   /**
@@ -200,16 +215,35 @@ class SiteAnalysisService {
     let nearest = { distance: Infinity, resource: null };
     
     for (const resource of resources) {
-      const resourcePoint = turf.point(resource.location.coordinates);
-      const distance = turf.distance(point, resourcePoint, { units: 'kilometers' });
-      
-      if (distance < nearest.distance) {
-        nearest = {
-          distance: Math.round(distance * 100) / 100,
-          resource: resource,
-          id: resource._id,
-          name: resource.name
-        };
+      try {
+        // Validate resource coordinates
+        if (!resource.location || !resource.location.coordinates || 
+            !Array.isArray(resource.location.coordinates) || 
+            resource.location.coordinates.length !== 2) {
+          console.warn(`Invalid coordinates for resource ${resource._id}:`, resource.location);
+          continue;
+        }
+
+        const [lng, lat] = resource.location.coordinates;
+        if (typeof lng !== 'number' || typeof lat !== 'number' || isNaN(lng) || isNaN(lat)) {
+          console.warn(`Invalid coordinate values for resource ${resource._id}:`, [lng, lat]);
+          continue;
+        }
+
+        const resourcePoint = turf.point([lng, lat]);
+        const distance = turf.distance(point, resourcePoint, { units: 'kilometers' });
+        
+        if (distance < nearest.distance) {
+          nearest = {
+            distance: Math.round(distance * 100) / 100,
+            resource: resource,
+            id: resource._id,
+            name: resource.name
+          };
+        }
+      } catch (error) {
+        console.warn(`Error processing resource ${resource._id}:`, error.message);
+        continue;
       }
     }
     
@@ -237,16 +271,54 @@ class SiteAnalysisService {
   selectOptimalSites(scoredSites) {
     // Take top 20% of sites
     const topSitesCount = Math.max(10, Math.floor(scoredSites.length * 0.2));
-    const topSites = scoredSites.slice(0, topSitesCount);
+    let topSites = scoredSites.slice(0, topSitesCount);
     
-    // Mark top 10% as golden locations
-    const goldenLocationCount = Math.max(3, Math.floor(topSites.length * 0.5));
+    // Filter sites to ensure minimum distance between them (avoid clustering)
+    const minDistance = 2; // km minimum distance between sites
+    const filteredSites = [];
     
-    return topSites.map((site, index) => ({
+    for (const site of topSites) {
+      const isTooClose = filteredSites.some(existingSite => {
+        const distance = this.calculateDistance(
+          site.coordinates,
+          existingSite.coordinates
+        );
+        return distance < minDistance;
+      });
+      
+      if (!isTooClose) {
+        filteredSites.push(site);
+      }
+      
+      // Limit to maximum 15 sites to avoid overcrowding
+      if (filteredSites.length >= 15) break;
+    }
+    
+    // Mark top 50% as golden locations
+    const goldenLocationCount = Math.max(3, Math.floor(filteredSites.length * 0.5));
+    
+    return filteredSites.map((site, index) => ({
       ...site,
       isGoldenLocation: index < goldenLocationCount,
       estimatedCosts: this.calculateEstimatedCosts(site)
     }));
+  }
+
+  /**
+   * Calculate distance between two coordinate points
+   */
+  calculateDistance(coord1, coord2) {
+    const [lng1, lat1] = coord1;
+    const [lng2, lat2] = coord2;
+    
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   /**
@@ -279,23 +351,116 @@ class SiteAnalysisService {
    * Save optimal sites to database
    */
   async saveOptimalSites(optimalSites, region) {
-    // Clear existing sites for this region
-    await OptimalSite.deleteMany({ region: region });
+    try {
+      // Clear existing sites for this region
+      await OptimalSite.deleteMany({ region: region });
+      
+      // Validate and prepare sites for database insertion
+      const sitesToSave = optimalSites
+        .filter(site => {
+          // Validate site data
+          return site && 
+                 site.location && 
+                 site.location.coordinates && 
+                 Array.isArray(site.location.coordinates) && 
+                 site.location.coordinates.length === 2 &&
+                 typeof site.location.coordinates[0] === 'number' &&
+                 typeof site.location.coordinates[1] === 'number' &&
+                 !isNaN(site.location.coordinates[0]) &&
+                 !isNaN(site.location.coordinates[1]) &&
+                 site.overallScore &&
+                 typeof site.overallScore === 'number' &&
+                 !isNaN(site.overallScore);
+        })
+        .map((site, index) => {
+          const district = this.getDistrictFromCoordinates(site.coordinates || site.location.coordinates, region);
+          
+          return {
+            location: site.location,
+            district: district,
+            region: region,
+            overallScore: site.overallScore,
+            scores: site.scores || {
+              greenEnergyScore: 0,
+              waterAccessScore: 0,
+              industryProximityScore: 0,
+              transportationScore: 0
+            },
+            nearestResources: site.nearestResources || {},
+            estimatedCosts: site.estimatedCosts || {
+              landAcquisition: 50,
+              infrastructure: 120,
+              connectivity: 30
+            },
+            isGoldenLocation: site.isGoldenLocation || false
+          };
+        });
+      
+      if (sitesToSave.length > 0) {
+        await OptimalSite.insertMany(sitesToSave);
+        console.log(`✅ Saved ${sitesToSave.length} valid optimal sites for ${region}`);
+      } else {
+        console.warn(`⚠️  No valid sites to save for region: ${region}`);
+      }
+      
+      return sitesToSave.length;
+    } catch (error) {
+      console.error('Error saving optimal sites:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get district name based on coordinates
+   */
+  getDistrictFromCoordinates(coordinates, fallbackRegion) {
+    if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+      return fallbackRegion || 'Unknown District';
+    }
     
-    // Prepare sites for database insertion
-    const sitesToSave = optimalSites.map(site => ({
-      location: site.location,
-      district: region,
-      region: region,
-      overallScore: site.overallScore,
-      scores: site.scores,
-      nearestResources: site.nearestResources,
-      estimatedCosts: site.estimatedCosts,
-      isGoldenLocation: site.isGoldenLocation
-    }));
+    const [lng, lat] = coordinates;
     
-    await OptimalSite.insertMany(sitesToSave);
-    console.log(`Saved ${sitesToSave.length} optimal sites for ${region}`);
+    // Validate coordinates
+    if (typeof lng !== 'number' || typeof lat !== 'number' || isNaN(lng) || isNaN(lat)) {
+      return fallbackRegion || 'Unknown District';
+    }
+    
+    // Define district boundaries for Gujarat (approximate)
+    const districtBounds = {
+      'Ahmedabad': { minLat: 22.9, maxLat: 23.5, minLng: 72.4, maxLng: 73.0 },
+      'Surat': { minLat: 20.8, maxLat: 21.4, minLng: 72.6, maxLng: 73.2 },
+      'Vadodara': { minLat: 22.2, maxLat: 22.8, minLng: 73.0, maxLng: 73.6 },
+      'Rajkot': { minLat: 22.1, maxLat: 22.7, minLng: 70.6, maxLng: 71.2 },
+      'Gandhinagar': { minLat: 23.1, maxLat: 23.5, minLng: 72.5, maxLng: 72.9 }
+    };
+
+    for (const [district, bounds] of Object.entries(districtBounds)) {
+      if (lat >= bounds.minLat && lat <= bounds.maxLat && 
+          lng >= bounds.minLng && lng <= bounds.maxLng) {
+        return district;
+      }
+    }
+    
+    // Better fallback based on general Gujarat geography
+    if (lat >= 20.0 && lat <= 25.0 && lng >= 68.0 && lng <= 75.0) {
+      // Determine closest major district
+      const distances = {
+        'Ahmedabad': Math.sqrt((lat - 23.0225) ** 2 + (lng - 72.5714) ** 2),
+        'Surat': Math.sqrt((lat - 21.1702) ** 2 + (lng - 72.8311) ** 2),
+        'Vadodara': Math.sqrt((lat - 22.3072) ** 2 + (lng - 73.2080) ** 2),
+        'Rajkot': Math.sqrt((lat - 22.3039) ** 2 + (lng - 70.8022) ** 2),
+        'Gandhinagar': Math.sqrt((lat - 23.2156) ** 2 + (lng - 72.6369) ** 2)
+      };
+      
+      const closestDistrict = Object.keys(distances).reduce((a, b) => 
+        distances[a] < distances[b] ? a : b
+      );
+      
+      return `${closestDistrict} Region`;
+    }
+    
+    // Final fallback for coordinates outside Gujarat
+    return fallbackRegion ? `${fallbackRegion} District` : 'Gujarat Region';
   }
 
   /**

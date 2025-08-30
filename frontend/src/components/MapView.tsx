@@ -33,6 +33,138 @@ const MapView: React.FC<MapViewProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const resourceMarkersRef = useRef<L.Marker[]>([]);
+
+  // Create resource marker icons
+  const createResourceIcon = (type: 'greenEnergy' | 'waterBody' | 'industry' | 'transportation') => {
+    const iconConfig = {
+      greenEnergy: { emoji: '⚡', color: '#10b981', name: 'Green Energy' },
+      waterBody: { emoji: '💧', color: '#3b82f6', name: 'Water Source' },
+      industry: { emoji: '🏭', color: '#8b5cf6', name: 'Industry' },
+      transportation: { emoji: '🚛', color: '#6b7280', name: 'Transportation' }
+    };
+
+    const config = iconConfig[type];
+    return L.divIcon({
+      className: 'resource-marker',
+      html: `
+        <div style="
+          width: 24px;
+          height: 24px;
+          background: ${config.color};
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          cursor: pointer;
+        ">
+          ${config.emoji}
+        </div>
+      `,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12]
+    });
+  };
+
+  // Add resource markers to map
+  const addResourceMarkers = (site: OptimalSite) => {
+    console.log('🔥 addResourceMarkers called for:', site.district);
+    
+    if (!mapInstance.current) {
+      console.log('❌ No map instance');
+      return;
+    }
+    
+    if (!site.nearestResources) {
+      console.log('❌ No nearestResources for', site.district);
+      return;
+    }
+
+    console.log('✅ Map instance and resources exist');
+    console.log('📍 Site nearestResources:', site.nearestResources);
+
+    // Clear existing resource markers
+    resourceMarkersRef.current.forEach(marker => {
+      try {
+        marker.remove();
+      } catch (e) {
+        console.warn('Error removing resource marker:', e);
+      }
+    });
+    resourceMarkersRef.current = [];
+
+    // Add a simple test marker first
+    console.log('🧪 Adding test marker...');
+    const testIcon = L.divIcon({
+      className: 'test-marker',
+      html: `<div style="width: 20px; height: 20px; background: red; border-radius: 50%; border: 2px solid white;">❤️</div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+    
+    const testMarker = L.marker([23.05, 72.6], { icon: testIcon }).addTo(mapInstance.current!);
+    testMarker.bindPopup('Test marker - if you see this, markers are working!');
+    resourceMarkersRef.current.push(testMarker);
+    console.log('✅ Test marker added');
+
+    // Define realistic resource locations for Gujarat
+    const resourceLocations = {
+      Ahmedabad: {
+        greenEnergy: [23.1, 72.6], // Solar farm location
+        waterBody: [23.0, 72.5], // Sabarmati River
+        industry: [22.9, 72.6], // Chemical complex
+        transportation: [23.2, 72.7] // Airport area
+      },
+      Surat: {
+        greenEnergy: [21.2, 72.9], // Wind farm location
+        waterBody: [21.1, 72.8], // Tapi River
+        industry: [21.0, 72.9], // Textile hub
+        transportation: [21.1, 72.7] // Port area
+      },
+      Vadodara: {
+        greenEnergy: [22.4, 73.2], // Hybrid energy park
+        waterBody: [22.3, 73.1], // Vishwamitri River
+        industry: [22.2, 73.2], // Petrochemical complex
+        transportation: [22.4, 73.0] // Railway junction
+      }
+    };
+
+    const locations = resourceLocations[site.district as keyof typeof resourceLocations];
+    if (!locations) {
+      console.log('❌ No predefined locations for', site.district);
+      return;
+    }
+
+    console.log('✅ Found locations for', site.district, locations);
+
+    // Add Green Energy marker
+    if (site.nearestResources.greenEnergy && locations.greenEnergy) {
+      console.log('🔋 Adding green energy marker at', locations.greenEnergy);
+      try {
+        const marker = L.marker(locations.greenEnergy as [number, number], { icon: createResourceIcon('greenEnergy') })
+          .addTo(mapInstance.current!);
+        
+        marker.bindPopup(`
+          <div style="text-align: center; padding: 8px;">
+            <h4 style="margin: 0 0 4px 0;">⚡ Green Energy</h4>
+            <p style="margin: 0; font-weight: bold;">${site.nearestResources.greenEnergy.name}</p>
+            <p style="margin: 4px 0 0 0; color: #666; font-size: 12px;">${site.nearestResources.greenEnergy.distance} km away</p>
+          </div>
+        `);
+        
+        resourceMarkersRef.current.push(marker);
+        console.log('✅ Green energy marker added successfully');
+      } catch (error) {
+        console.error('❌ Error adding green energy marker:', error);
+      }
+    }
+
+    console.log(`🎯 Total resource markers added: ${resourceMarkersRef.current.length}`);
+  };
 
   // Initialize map
   useEffect(() => {
@@ -213,8 +345,12 @@ const MapView: React.FC<MapViewProps> = ({
 
         // Add click handler
         marker.on('click', () => {
-          console.log(`Clicked on ${site.district}`);
+          console.log(`Marker clicked for ${site.district}!`);
           onSiteSelect(site as any);
+          
+          // Add resource markers when site is selected
+          console.log('About to call addResourceMarkers...');
+          addResourceMarkers(site as any);
         });
 
         markersRef.current.push(marker);
@@ -276,9 +412,117 @@ const MapView: React.FC<MapViewProps> = ({
           setSites(response.data);
           toast.success(`Loaded ${response.data.length} optimal sites for ${region === 'all' || !region ? 'Gujarat' : region}`);
         } else {
-          console.log('No data received from API, falling back to demo data');
-          setSites([]);
-          toast.error('No data received from API');
+          console.log('No optimal sites found in database, automatically generating...');
+          
+          // Automatically trigger analysis when no sites are found
+          try {
+            // Use a specific region for analysis, defaulting to a major Gujarat district
+            const regionToAnalyze = region && region !== 'all' ? region : 'Ahmedabad';
+            console.log(`🔥 Auto-triggering analysis for region: ${regionToAnalyze}`);
+            
+            toast('No sites found. Generating optimal sites using AI algorithm...', {
+              icon: '🤖',
+              duration: 3000,
+            });
+            
+            const analysisResponse = await ApiService.analyzeRegion({
+              region: regionToAnalyze,
+              gridResolution: 0.01
+            });
+            
+            if (analysisResponse.sites && analysisResponse.sites.length > 0) {
+              const sites = analysisResponse.sites as unknown as OptimalSite[];
+              
+              // Validate and filter out invalid sites
+              const validSites = sites.filter(site => {
+                return site && 
+                       site.location && 
+                       site.location.coordinates && 
+                       Array.isArray(site.location.coordinates) && 
+                       site.location.coordinates.length === 2 &&
+                       typeof site.location.coordinates[0] === 'number' &&
+                       typeof site.location.coordinates[1] === 'number' &&
+                       site.district && 
+                       site.district !== 'undefined' &&
+                       site.overallScore &&
+                       typeof site.overallScore === 'number';
+              });
+              
+              if (validSites.length > 0) {
+                setSites(validSites);
+                toast.success(`🎉 Generated ${validSites.length} optimal sites for ${regionToAnalyze} using MCDA algorithm!`);
+              } else {
+                throw new Error('Analysis returned invalid site data');
+              }
+            } else {
+              throw new Error('Analysis completed but no sites generated');
+            }
+          } catch (analysisError) {
+            console.error('Auto-analysis failed:', analysisError);
+            
+            // Fall back to mock sites with clear indication
+            console.log('Analysis failed, using fallback demo sites');
+            const mockSites: OptimalSite[] = [
+              {
+                _id: 'demo-ahmedabad',
+                location: { type: 'Point', coordinates: [72.5714, 23.0225] },
+                district: 'Ahmedabad',
+                region: 'Central Gujarat',
+                overallScore: 8.5,
+                scores: {
+                  greenEnergyScore: 8.0,
+                  waterAccessScore: 8.5,
+                  industryProximityScore: 9.0,
+                  transportationScore: 8.5
+                },
+                nearestResources: {
+                  greenEnergy: { id: 'ge1', distance: 2.5, name: 'Solar Farm' },
+                  waterBody: { id: 'wb1', distance: 1.8, name: 'Sabarmati River' },
+                  industry: { id: 'ind1', distance: 3.2, name: 'Chemical Complex' },
+                  transportation: { id: 'tr1', distance: 5.0, name: 'Ahmedabad Airport' }
+                },
+                estimatedCosts: {
+                  landAcquisition: 50,
+                  infrastructure: 120,
+                  connectivity: 30
+                },
+                isGoldenLocation: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              },
+              {
+                _id: 'demo-surat',
+                location: { type: 'Point', coordinates: [72.8311, 21.1702] },
+                district: 'Surat',
+                region: 'South Gujarat',
+                overallScore: 7.8,
+                scores: {
+                  greenEnergyScore: 8.5,
+                  waterAccessScore: 7.0,
+                  industryProximityScore: 8.0,
+                  transportationScore: 7.8
+                },
+                nearestResources: {
+                  greenEnergy: { id: 'ge2', distance: 1.5, name: 'Wind Farm' },
+                  waterBody: { id: 'wb2', distance: 3.0, name: 'Tapi River' },
+                  industry: { id: 'ind2', distance: 2.8, name: 'Textile Hub' },
+                  transportation: { id: 'tr2', distance: 4.5, name: 'Surat Port' }
+                },
+                estimatedCosts: {
+                  landAcquisition: 45,
+                  infrastructure: 110,
+                  connectivity: 25
+                },
+                isGoldenLocation: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              }
+            ];
+            setSites(mockSites);
+            toast.error('Analysis failed. Showing demo sites. Use ⚡ button to try again.', {
+              duration: 6000,
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading sites:', error);
@@ -368,8 +612,26 @@ const MapView: React.FC<MapViewProps> = ({
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Add new markers for optimal sites
+    // Add new markers for optimal sites with validation
     sites.forEach((site) => {
+      // Validate site data before creating marker
+      if (!site || !site.location || !site.location.coordinates || 
+          !Array.isArray(site.location.coordinates) || 
+          site.location.coordinates.length !== 2 ||
+          !site.district || site.district === 'undefined') {
+        console.warn('Skipping invalid site:', site);
+        return;
+      }
+
+      const [longitude, latitude] = site.location.coordinates;
+      
+      // Validate coordinates are numbers and within reasonable bounds for Gujarat
+      if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
+          latitude < 20 || latitude > 25 || longitude < 68 || longitude > 75) {
+        console.warn(`Skipping site with invalid coordinates: ${site.district} at [${latitude}, ${longitude}]`);
+        return;
+      }
+
       const getMarkerColor = (score: number) => {
         if (score >= 8) return '#10b981'; // Green
         if (score >= 6) return '#f59e0b'; // Yellow
@@ -378,10 +640,9 @@ const MapView: React.FC<MapViewProps> = ({
 
       const color = getMarkerColor(site.overallScore);
       
-      // Try using a simple Leaflet marker first to test clicking
-      console.log(`Creating marker for ${site.district} at [${site.location.coordinates[1]}, ${site.location.coordinates[0]}]`);
+      console.log(`Creating marker for ${site.district} at [${latitude}, ${longitude}]`);
       
-      const marker = L.marker([site.location.coordinates[1], site.location.coordinates[0]])
+      const marker = L.marker([latitude, longitude])
         .addTo(mapInstance.current!);
 
       // Simple popup for testing
@@ -396,7 +657,6 @@ const MapView: React.FC<MapViewProps> = ({
       marker.on('click', (e) => {
         console.log(`✅ Marker clicked for ${site.district}!`);
         e.originalEvent?.stopPropagation();
-        alert(`Clicked on ${site.district} - Score: ${site.overallScore}`);
         onSiteSelect(site);
       });
 
@@ -503,20 +763,67 @@ const MapView: React.FC<MapViewProps> = ({
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="absolute bottom-6 right-6 flex flex-col space-y-3 z-10">
-        <button className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl border border-white/30 flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 group">
-          <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      <div className="absolute top-6 right-6 z-10 space-y-3">
+        {/* Generate Sites Button */}
+        <button
+          onClick={async () => {
+            setIsLoading(true);
+            try {
+              const regionToAnalyze = region && region !== 'all' ? region : 'Ahmedabad';
+              console.log(`Manual analysis trigger for region: ${regionToAnalyze}`);
+              
+              const analysisResponse = await ApiService.analyzeRegion({
+                region: regionToAnalyze,
+                gridResolution: 0.01
+              });
+              
+              if (analysisResponse.sites && analysisResponse.sites.length > 0) {
+                // Handle the response properly - the backend returns sites directly in the sites array
+                const sites = analysisResponse.sites as unknown as OptimalSite[];
+                setSites(sites);
+                toast.success(`Generated ${sites.length} optimal sites for ${regionToAnalyze}!`);
+              } else {
+                toast.error('Analysis completed but no sites were generated');
+              }
+            } catch (error) {
+              console.error('Manual analysis failed:', error);
+              toast.error('Failed to generate sites. Check console for details.');
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          className="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+          title="Generate Optimal Sites"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </button>
-        <button className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl border border-white/30 flex items-center justify-center text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 group">
-          <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        </button>
-        <button className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl border border-white/30 flex items-center justify-center text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200 group">
-          <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        
+        {/* Refresh Sites Button */}
+        <button
+          onClick={async () => {
+            setIsLoading(true);
+            try {
+              const response = await ApiService.getOptimalSites(region || 'all');
+              if (response.data && response.data.length > 0) {
+                setSites(response.data);
+                toast.success(`Refreshed ${response.data.length} sites`);
+              } else {
+                setSites([]);
+                toast('No sites found in database', { icon: 'ℹ️' });
+              }
+            } catch (error) {
+              toast.error('Failed to refresh sites');
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          className="flex items-center justify-center w-12 h-12 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+          title="Refresh Sites from Database"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
       </div>
