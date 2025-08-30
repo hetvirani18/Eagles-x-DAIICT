@@ -5,9 +5,7 @@ import SearchComponent from './SearchComponent';
 import LocationDetails from './LocationDetails';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Separator } from './ui/separator';
-import { Badge } from './ui/badge';
-import { Layers, Info, Star, Zap, Factory, Droplets, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
+import { Layers, Info, Star, Factory, Droplets, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
 import { useApiData } from '../hooks/useApiData';
 
 const MainMapPage = () => {
@@ -23,6 +21,9 @@ const MainMapPage = () => {
   const {
     energySources,
     demandCenters,
+    waterSources,
+    gasPipelines,
+    roadNetworks,
     optimalLocations
   } = useApiData();
 
@@ -292,6 +293,13 @@ const MainMapPage = () => {
                       onClose={() => setSelectedLocation(null)}
                       onViewFullAnalysis={() => handleViewFullAnalysis(selectedLocation)}
                       embedded={true}
+                      resources={{
+                        energySources,
+                        demandCenters,
+                        waterSources,
+                        gasPipelines,
+                        roadNetworks,
+                      }}
                     />
                   </CardContent>
                 </Card>
@@ -366,6 +374,13 @@ const MainMapPage = () => {
                 onClose={() => setSelectedLocation(null)}
                 onViewFullAnalysis={() => handleViewFullAnalysis(selectedLocation)}
                 embedded={true}
+                resources={{
+                  energySources,
+                  demandCenters,
+                  waterSources,
+                  gasPipelines,
+                  roadNetworks,
+                }}
               />
             </div>
           </div>
