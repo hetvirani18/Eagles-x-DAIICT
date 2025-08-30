@@ -50,20 +50,32 @@ class SitesController {
       const { region } = req.params;
       const { limit = 50, goldenOnly = false } = req.query;
 
-      const query = { region: { $regex: region, $options: 'i' } };
+      console.log(`Getting optimal sites for region: ${region}`);
+
+      let query = {};
+      
+      // If region is not 'all', filter by region
+      if (region && region !== 'all') {
+        query.region = { $regex: region, $options: 'i' };
+      }
+      
       if (goldenOnly === 'true') {
         query.isGoldenLocation = true;
       }
+
+      console.log('Query:', JSON.stringify(query));
 
       const sites = await OptimalSite.find(query)
         .sort({ overallScore: -1 })
         .limit(parseInt(limit));
 
+      console.log(`Found ${sites.length} sites`);
+
       res.status(200).json({
         message: 'Sites retrieved successfully',
         region,
         count: sites.length,
-        sites
+        data: sites // Change 'sites' to 'data' to match frontend expectations
       });
     } catch (error) {
       console.error('Error in getOptimalSites:', error);

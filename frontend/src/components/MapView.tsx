@@ -48,12 +48,7 @@ const MapView: React.FC<MapViewProps> = ({
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mapInstance.current);
 
-    console.log('Map initialized, adding demo markers...');
-
-    // Add some demo markers immediately after map loads
-    setTimeout(() => {
-      addDemoMarkers();
-    }, 500);
+    console.log('Map initialized successfully');
 
     return () => {
       if (mapInstance.current) {
@@ -235,22 +230,26 @@ const MapView: React.FC<MapViewProps> = ({
     });
   };
 
-  // Load optimal sites when region changes
+  // Load optimal sites when region changes or on initial load
   useEffect(() => {
     const loadSites = async () => {
       setIsLoading(true);
       try {
-        const response = await ApiService.getOptimalSites(region);
-        if (response.data) {
+        console.log(`Loading sites for region: ${region || 'all'}`);
+        const response = await ApiService.getOptimalSites(region || 'all');
+        if (response.data && response.data.length > 0) {
+          console.log(`✅ Loaded ${response.data.length} sites from API`);
           setSites(response.data);
-          toast.success(`Loaded ${response.data.length} optimal sites for ${region === 'all' ? 'Gujarat' : region}`);
+          toast.success(`Loaded ${response.data.length} optimal sites for ${region === 'all' || !region ? 'Gujarat' : region}`);
         } else {
+          console.log('No data received from API, falling back to demo data');
           setSites([]);
           toast.error('No data received from API');
         }
       } catch (error) {
         console.error('Error loading sites:', error);
-        // For demo purposes, create some mock data
+        console.log('API failed, using fallback demo sites');
+        // Fallback to demo data only if API fails
         const mockSites: OptimalSite[] = [
           {
             _id: '68b245b420c6563cdfffeee3',
@@ -318,6 +317,14 @@ const MapView: React.FC<MapViewProps> = ({
 
     loadSites();
   }, [region, setSites, setIsLoading]);
+
+  // Initial load when component mounts
+  useEffect(() => {
+    // Load all sites initially if no region is specified
+    if (!region) {
+      console.log('Component mounted, loading all sites initially');
+    }
+  }, []);
 
   // Update markers when sites change
   useEffect(() => {
@@ -635,16 +642,6 @@ const MapView: React.FC<MapViewProps> = ({
 
       {/* Floating Action Buttons */}
       <div className="absolute bottom-6 right-6 flex flex-col space-y-3 z-10">
-        <button 
-          onClick={() => {
-            console.log('Manual marker add triggered');
-            addDemoMarkers();
-          }}
-          className="w-12 h-12 bg-red-500 backdrop-blur-sm rounded-full shadow-2xl border border-white/30 flex items-center justify-center text-white hover:bg-red-600 transition-all duration-200 group"
-          title="Add Demo Markers"
-        >
-          📍
-        </button>
         <button className="w-12 h-12 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl border border-white/30 flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 group">
           <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
