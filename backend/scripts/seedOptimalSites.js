@@ -18,10 +18,15 @@ const sampleOptimalSites = [
       transportationScore: 8.5
     },
     nearestResources: {
-      greenEnergy: { id: 'ge1', distance: 2.5, name: 'Ahmedabad Solar Park' },
-      waterBody: { id: 'wb1', distance: 1.8, name: 'Sabarmati River' },
-      industry: { id: 'ind1', distance: 3.2, name: 'Chemical Complex' },
-      transportation: { id: 'tr1', distance: 1.5, name: 'Ahmedabad Airport' }
+      greenEnergy: { distance: 2.5, name: 'Solar Farm Ahmedabad' },
+      waterBody: { distance: 1.8, name: 'Sabarmati River' },
+      industry: { distance: 3.2, name: 'Chemical Complex' },
+      transportation: { distance: 5.0, name: 'Ahmedabad Airport' }
+    },
+    estimatedCosts: {
+      landAcquisition: 50,
+      infrastructure: 120,
+      connectivity: 30
     },
     isGoldenLocation: true,
     analysisDate: new Date()
@@ -41,10 +46,15 @@ const sampleOptimalSites = [
       transportationScore: 7.5
     },
     nearestResources: {
-      greenEnergy: { id: 'ge2', distance: 3.0, name: 'Surat Wind Farm' },
-      waterBody: { id: 'wb2', distance: 2.2, name: 'Tapi River' },
-      industry: { id: 'ind2', distance: 2.8, name: 'Diamond Polishing Hub' },
-      transportation: { id: 'tr2', distance: 2.0, name: 'Surat Railway Junction' }
+      greenEnergy: { distance: 1.5, name: 'Wind Farm Surat' },
+      waterBody: { distance: 3.0, name: 'Tapi River' },
+      industry: { distance: 2.8, name: 'Textile Hub' },
+      transportation: { distance: 4.5, name: 'Surat Port' }
+    },
+    estimatedCosts: {
+      landAcquisition: 45,
+      infrastructure: 110,
+      connectivity: 25
     },
     isGoldenLocation: false,
     analysisDate: new Date()
@@ -64,35 +74,17 @@ const sampleOptimalSites = [
       transportationScore: 7.5
     },
     nearestResources: {
-      greenEnergy: { id: 'ge3', distance: 4.0, name: 'Vadodara Solar Plant' },
-      waterBody: { id: 'wb3', distance: 3.5, name: 'Vishwamitri River' },
-      industry: { id: 'ind3', distance: 2.5, name: 'GIDC Industrial Area' },
-      transportation: { id: 'tr3', distance: 3.0, name: 'Vadodara Junction' }
+      greenEnergy: { distance: 3.2, name: 'Hybrid Energy Park' },
+      waterBody: { distance: 2.1, name: 'Vishwamitri River' },
+      industry: { distance: 1.8, name: 'Petrochemical Complex' },
+      transportation: { distance: 6.2, name: 'Vadodara Railway Junction' }
+    },
+    estimatedCosts: {
+      landAcquisition: 42,
+      infrastructure: 105,
+      connectivity: 28
     },
     isGoldenLocation: false,
-    analysisDate: new Date()
-  },
-  {
-    location: {
-      type: 'Point',
-      coordinates: [70.0577, 22.4707] // Jamnagar
-    },
-    district: 'Jamnagar',
-    region: 'Saurashtra',
-    overallScore: 8.2,
-    scores: {
-      greenEnergyScore: 8.8,
-      waterAccessScore: 7.0,
-      industryProximityScore: 8.5,
-      transportationScore: 8.5
-    },
-    nearestResources: {
-      greenEnergy: { id: 'ge6', distance: 1.5, name: 'Jamnagar Solar Complex' },
-      waterBody: { id: 'wb6', distance: 3.0, name: 'Gulf of Kutch' },
-      industry: { id: 'ind6', distance: 2.0, name: 'Reliance Refinery' },
-      transportation: { id: 'tr6', distance: 2.5, name: 'Jamnagar Airport' }
-    },
-    isGoldenLocation: true,
     analysisDate: new Date()
   }
 ];
@@ -116,8 +108,14 @@ async function seedOptimalSites() {
 
     console.log('\nOptimal sites added:');
     insertedSites.forEach((site, index) => {
-      console.log(`${index + 1}. ${site.district} - Score: ${site.overallScore}/10 ${site.isGoldenLocation ? '⭐' : ''}`);
+      console.log(`${index + 1}. ${site.district} - Score: ${site.overallScore}/10 ${site.isGoldenLocation ? '⭐' : ''} (ID: ${site._id})`);
     });
+
+    // Store the IDs for frontend use
+    console.log('\n📋 Use these IDs in your frontend:');
+    console.log('Ahmedabad ID:', insertedSites[0]._id);
+    console.log('Surat ID:', insertedSites[1]._id);
+    console.log('Vadodara ID:', insertedSites[2]._id);
 
   } catch (error) {
     console.error('Error seeding optimal sites:', error);
