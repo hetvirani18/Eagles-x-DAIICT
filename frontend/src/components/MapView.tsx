@@ -165,15 +165,49 @@ const MapView: React.FC<MapViewProps> = ({
       console.log(`Adding marker ${index + 1} for ${site.district} at [${site.location.coordinates[1]}, ${site.location.coordinates[0]}]`);
       
       try {
-        // Create marker with coordinates in correct order (lat, lng)
-        const marker = L.marker([site.location.coordinates[1], site.location.coordinates[0]])
-          .addTo(mapInstance.current!);
+        // Create custom styled icon
+        const customIcon = L.divIcon({
+          className: 'custom-hydrogen-marker',
+          html: `
+            <div style="
+              width: 32px;
+              height: 32px;
+              background: linear-gradient(135deg, #10b981, #059669);
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 3px 12px rgba(16, 185, 129, 0.4);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: bold;
+              font-size: 11px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              position: relative;
+            " onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 4px 16px rgba(16, 185, 129, 0.6)'" 
+               onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 3px 12px rgba(16, 185, 129, 0.4)'">
+              H₂
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
 
-        // Simple popup
+        // Create marker with custom icon
+        const marker = L.marker([site.location.coordinates[1], site.location.coordinates[0]], {
+          icon: customIcon
+        }).addTo(mapInstance.current!);
+
+        // Enhanced popup with better styling
         marker.bindPopup(`
-          <div style="text-align: center; padding: 8px;">
-            <h3 style="margin: 0 0 8px 0;">${site.district}</h3>
-            <p style="margin: 0;">Score: ${site.overallScore}/10</p>
+          <div style="text-align: center; padding: 12px; min-width: 200px;">
+            <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 16px;">${site.district}</h3>
+            <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 4px 8px; border-radius: 12px; display: inline-block; margin-bottom: 8px;">
+              <strong>Score: ${site.overallScore}/10</strong>
+            </div>
+            <p style="margin: 0; color: #6b7280; font-size: 13px;">Click for details</p>
           </div>
         `);
 
@@ -184,7 +218,7 @@ const MapView: React.FC<MapViewProps> = ({
         });
 
         markersRef.current.push(marker);
-        console.log(`Successfully added marker for ${site.district}`);
+        console.log(`Successfully added styled marker for ${site.district}`);
       } catch (error) {
         console.error(`Error adding marker for ${site.district}:`, error);
       }
@@ -344,199 +378,27 @@ const MapView: React.FC<MapViewProps> = ({
 
       const color = getMarkerColor(site.overallScore);
       
-      const customIcon = L.divIcon({
-        className: 'custom-marker',
-        html: `
-          <div style="
-            background: ${color};
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-          ">
-            ${site.overallScore.toFixed(1)}
-          </div>
-        `,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
-        popupAnchor: [0, -15]
-      });
+      // Try using a simple Leaflet marker first to test clicking
+      console.log(`Creating marker for ${site.district} at [${site.location.coordinates[1]}, ${site.location.coordinates[0]}]`);
+      
+      const marker = L.marker([site.location.coordinates[1], site.location.coordinates[0]])
+        .addTo(mapInstance.current!);
 
-      // Create detailed popup content
-      const popupContent = `
-        <div style="max-width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-          <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px;
-            margin: -9px -9px 12px -9px;
-            border-radius: 8px 8px 0 0;
-            text-align: center;
-          ">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">
-              🏭 Optimal Hydrogen Plant Site
-            </h3>
-            <p style="margin: 4px 0 0 0; font-size: 14px; opacity: 0.9;">
-              ${site.district}, ${site.region}
-            </p>
-          </div>
-          
-          <div style="padding: 0 4px;">
-            <div style="
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center;
-              margin-bottom: 12px;
-              padding: 8px 12px;
-              background: #f8fafc;
-              border-radius: 6px;
-              border-left: 4px solid #10b981;
-            ">
-              <span style="font-weight: 600; color: #374151;">Overall Score:</span>
-              <span style="
-                font-size: 18px; 
-                font-weight: bold; 
-                color: #10b981;
-                background: white;
-                padding: 4px 8px;
-                border-radius: 4px;
-              ">
-                ${site.overallScore.toFixed(1)}/10
-              </span>
-            </div>
-            
-            <div style="margin-bottom: 12px;">
-              <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">
-                📊 Detailed Scores
-              </h4>
-              
-              <div style="display: grid; gap: 6px;">
-                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-                  <span style="color: #6b7280;">🌱 Green Energy:</span>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="
-                      width: 60px; 
-                      height: 6px; 
-                      background: #e5e7eb; 
-                      border-radius: 3px; 
-                      overflow: hidden;
-                    ">
-                      <div style="
-                        width: ${(site.scores.greenEnergyScore / 10) * 100}%; 
-                        height: 100%; 
-                        background: #10b981;
-                      "></div>
-                    </div>
-                    <span style="font-weight: 600; color: #374151; min-width: 30px;">
-                      ${site.scores.greenEnergyScore.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-                  <span style="color: #6b7280;">💧 Water Access:</span>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="
-                      width: 60px; 
-                      height: 6px; 
-                      background: #e5e7eb; 
-                      border-radius: 3px; 
-                      overflow: hidden;
-                    ">
-                      <div style="
-                        width: ${(site.scores.waterAccessScore / 10) * 100}%; 
-                        height: 100%; 
-                        background: #3b82f6;
-                      "></div>
-                    </div>
-                    <span style="font-weight: 600; color: #374151; min-width: 30px;">
-                      ${site.scores.waterAccessScore.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-                  <span style="color: #6b7280;">🏭 Industry:</span>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="
-                      width: 60px; 
-                      height: 6px; 
-                      background: #e5e7eb; 
-                      border-radius: 3px; 
-                      overflow: hidden;
-                    ">
-                      <div style="
-                        width: ${(site.scores.industryProximityScore / 10) * 100}%; 
-                        height: 100%; 
-                        background: #f59e0b;
-                      "></div>
-                    </div>
-                    <span style="font-weight: 600; color: #374151; min-width: 30px;">
-                      ${site.scores.industryProximityScore.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-                  <span style="color: #6b7280;">🚛 Transport:</span>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="
-                      width: 60px; 
-                      height: 6px; 
-                      background: #e5e7eb; 
-                      border-radius: 3px; 
-                      overflow: hidden;
-                    ">
-                      <div style="
-                        width: ${(site.scores.transportationScore / 10) * 100}%; 
-                        height: 100%; 
-                        background: #8b5cf6;
-                      "></div>
-                    </div>
-                    <span style="font-weight: 600; color: #374151; min-width: 30px;">
-                      ${site.scores.transportationScore.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <button onclick="window.selectSite && window.selectSite('${site._id}')" style="
-              width: 100%;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              border: none;
-              padding: 10px;
-              border-radius: 6px;
-              font-weight: 600;
-              cursor: pointer;
-              font-size: 14px;
-              transition: all 0.2s;
-            " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-              📋 View Full Details
-            </button>
-          </div>
+      // Simple popup for testing
+      marker.bindPopup(`
+        <div style="text-align: center; padding: 10px;">
+          <h3>${site.district}</h3>
+          <p>Score: ${site.overallScore}/10</p>
+          <p>Region: ${site.region}</p>
         </div>
-      `;
+      `);
 
-      const marker = L.marker(
-        [site.location.coordinates[1], site.location.coordinates[0]], 
-        { icon: customIcon }
-      ).addTo(mapInstance.current!);
-
-      marker.bindPopup(popupContent, {
-        maxWidth: 340,
-        className: 'custom-popup'
+      marker.on('click', (e) => {
+        console.log(`✅ Marker clicked for ${site.district}!`);
+        e.originalEvent?.stopPropagation();
+        alert(`Clicked on ${site.district} - Score: ${site.overallScore}`);
+        onSiteSelect(site);
       });
-
-      marker.on('click', () => onSiteSelect(site));
 
       markersRef.current.push(marker);
     });

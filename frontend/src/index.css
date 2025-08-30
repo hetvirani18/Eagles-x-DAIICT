@@ -1,6 +1,21 @@
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
 
+/* Leaflet marker fixes */
+.custom-marker {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 1000 !important;
+}
+
+.custom-marker:hover {
+  z-index: 1001 !important;
+}
+
+.leaflet-interactive {
+  pointer-events: auto !important;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
