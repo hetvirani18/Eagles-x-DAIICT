@@ -1,6 +1,6 @@
 # H₂-Optimize - Green Hydrogen Location Intelligence
 
-🌱 **AI-powered platform for optimizing green hydrogen production facilities in Gujarat, India**
+🌱 **Platform for optimizing green hydrogen production facilities in Gujarat, India**
 
 ## 🚀 Quick Start
 
@@ -9,30 +9,12 @@
 - **Node.js 18+** (Frontend) 
 - **MongoDB** (Database)
 
-### Option 1: Using Startup Scripts (Recommended)
-
 #### Windows (PowerShell)
 ```powershell
 # Start Backend
 .\start-backend.ps1
 
-# Start Frontend (in another terminal)
-.\start-frontend.ps1
-```
-
-#### Linux/Mac (Bash)
-```bash
-# Make scripts executable
-chmod +x start-backend.sh start-frontend.sh
-
-# Start Backend
-./start-backend.sh
-
-# Start Frontend (in another terminal)  
-./start-frontend.sh
-```
-
-### Option 2: Manual Setup
+### Manual Setup
 
 #### Backend Setup
 ```bash
@@ -62,37 +44,12 @@ PORT=3001 npm start
 - **Backend API**: http://localhost:8080  
 - **API Documentation**: http://localhost:8080/docs
 
-## 🔧 Recent Updates (v3.0) - August 2025
-
-### ✅ React 19 Frontend Upgrade
-- **Successfully upgraded to React 19.0.0** with all modern features
-- **Implemented concurrent features**: `useDeferredValue`, `startTransition`
-- **Enhanced error boundaries** and Suspense integration
-- **Performance improvements** with deferred values and transitions
-- **Backward compatibility** maintained with feature toggle
-
 ### ✅ Modernized Backend (v2.0)
 - **Updated FastAPI to v0.116.1** (latest stable)
 - **Replaced deprecated `@app.on_event()`** with modern `lifespan` context manager
 - **Updated all dependencies** to latest stable versions
 - **Added uvicorn[standard]** with enhanced performance features
 - **Improved startup/shutdown lifecycle management**
-
-### 🔄 Dependency Updates
-- **React**: 18.x → 19.0.0 (with concurrent features)
-- **FastAPI**: 0.110.1 → 0.116.1
-- **Uvicorn**: 0.25.0 → 0.35.0 (with standard extras)
-- **PyMongo**: 4.5.0 → 4.14.1
-- **Motor**: 3.3.1 → 3.7.1
-- **Pydantic**: Updated to 2.9.0+
-- **Date-fns**: Updated for React 19 compatibility
-- **React Day Picker**: Updated for React 19 compatibility
-
-### 🚫 Eliminated Deprecation Warnings
-- ✅ No more `on_event` deprecation warnings
-- ✅ Modern async context managers
-- ✅ Future-proof codebase
-- ✅ React 19 concurrent features properly implemented
 
 ### 🧪 Comprehensive Testing Complete
 - ✅ **Interactive map functionality** - fully working
@@ -177,11 +134,5 @@ Optimize green hydrogen production facility placement by analyzing:
 - **Water resource accessibility** 
 - **Transportation infrastructure**
 - **Economic viability factors**
-
-## 📄 License
-
-MIT License - See LICENSE file for details
-
----
 
 💡 **Built for Gujarat's Green Energy Future** 🌿
