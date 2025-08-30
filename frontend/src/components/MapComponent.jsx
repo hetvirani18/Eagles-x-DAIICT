@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -29,18 +29,52 @@ const createCustomIcon = (color, IconComponent) => {
   });
 };
 
-const MapController = ({ searchLocation, onLocationSelect }) => {
+// Viewport tracker component to handle marker visibility
+const ViewportTracker = memo(({ onViewportChange }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    const handleMoveEnd = () => {
+      const bounds = map.getBounds();
+      onViewportChange(bounds);
+    };
+    
+    map.on('moveend', handleMoveEnd);
+    map.on('zoomend', handleMoveEnd);
+    
+    // Initial viewport check
+    handleMoveEnd();
+    
+    return () => {
+      map.off('moveend', handleMoveEnd);
+      map.off('zoomend', handleMoveEnd);
+    };
+  }, [map, onViewportChange]);
+
+  return null;
+});
+
+const MapController = memo(({ searchLocation, onLocationSelect }) => {
   const map = useMap();
   
   useEffect(() => {
     if (searchLocation) {
-      // Use a higher zoom level to focus on the specific location
-      map.setView(searchLocation, 12);
+      map.flyTo(searchLocation, 12, {
+        duration: 1, // Duration in seconds
+        easeLinearity: 0.25
+      });
     }
   }, [searchLocation, map]);
 
   return null;
-};
+});
+
+// Memoized marker components for better performance
+const MarkerWithPopup = memo(({ position, icon, popupContent }) => (
+  <Marker position={position} icon={icon}>
+    <Popup>{popupContent}</Popup>
+  </Marker>
+));
 
 const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) => {
   const { 
@@ -54,12 +88,44 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
   } = useApiData();
   
   const [selectedOptimalLocation, setSelectedOptimalLocation] = useState(null);
+  const [visibleBounds, setVisibleBounds] = useState(null);
   const gujaratCenter = [22.5, 71.5];
 
-  const handleOptimalLocationClick = (location) => {
+  // Memoize icon creation
+  const icons = useMemo(() => ({
+    energy: createCustomIcon('#f59e0b', 'zap'),
+    demand: createCustomIcon('#dc2626', 'factory'),
+    water: createCustomIcon('#0ea5e9', 'water'),
+    optimal: createCustomIcon('#22c55e', 'star')
+  }), []);
+
+  const handleOptimalLocationClick = useCallback((location) => {
     setSelectedOptimalLocation(location);
     onLocationSelect(location);
-  };
+  }, [onLocationSelect]);
+
+  const handleViewportChange = useCallback((bounds) => {
+    setVisibleBounds(bounds);
+  }, []);
+
+  // Filter markers based on viewport bounds
+  const visibleMarkers = useMemo(() => {
+    if (!visibleBounds) return { energyMarkers: [], demandMarkers: [], waterMarkers: [] };
+
+    const isInBounds = (lat, lng) => visibleBounds.contains([lat, lng]);
+
+    return {
+      energyMarkers: energySources?.filter(source => 
+        isInBounds(source.location.latitude, source.location.longitude)
+      ) || [],
+      demandMarkers: demandCenters?.filter(center => 
+        isInBounds(center.location.latitude, center.location.longitude)
+      ) || [],
+      waterMarkers: waterSources?.filter(source => 
+        isInBounds(source.location.latitude, source.location.longitude)
+      ) || []
+    };
+  }, [visibleBounds, energySources, demandCenters, waterSources]);
 
   if (loading) {
     return (
@@ -90,6 +156,7 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
         zoom={7}
         className="h-full w-full rounded-lg"
         zoomControl={true}
+        preferCanvas={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -101,14 +168,15 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
           onLocationSelect={onLocationSelect}
         />
 
+        <ViewportTracker onViewportChange={handleViewportChange} />
+
         {/* Energy Sources */}
-        {energySources.map((source) => (
-          <Marker
+        {visibleMarkers.energyMarkers.map((source) => (
+          <MarkerWithPopup
             key={source.id}
             position={[source.location.latitude, source.location.longitude]}
-            icon={createCustomIcon('#f59e0b', 'zap')}
-          >
-            <Popup>
+            icon={icons.energy}
+            popupContent={
               <div className="p-2 min-w-[200px]">
                 <h3 className="font-semibold flex items-center gap-2 text-amber-800">
                   <Zap className="w-4 h-4" />
@@ -124,18 +192,17 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
                   <p className="text-xs text-gray-500">Operator: {source.operator}</p>
                 </div>
               </div>
-            </Popup>
-          </Marker>
+            }
+          />
         ))}
 
         {/* Demand Centers */}
-        {demandCenters.map((center) => (
-          <Marker
+        {visibleMarkers.demandMarkers.map((center) => (
+          <MarkerWithPopup
             key={center.id}
             position={[center.location.latitude, center.location.longitude]}
-            icon={createCustomIcon('#dc2626', 'factory')}
-          >
-            <Popup>
+            icon={icons.demand}
+            popupContent={
               <div className="p-2 min-w-[200px]">
                 <h3 className="font-semibold flex items-center gap-2 text-red-800">
                   <Factory className="w-4 h-4" />
@@ -159,18 +226,17 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
                   </p>
                 </div>
               </div>
-            </Popup>
-          </Marker>
+            }
+          />
         ))}
 
         {/* Water Sources */}
-        {waterSources.map((water) => (
-          <Marker
+        {visibleMarkers.waterMarkers.map((water) => (
+          <MarkerWithPopup
             key={water.id}
             position={[water.location.latitude, water.location.longitude]}
-            icon={createCustomIcon('#0ea5e9', 'water')}
-          >
-            <Popup>
+            icon={icons.water}
+            popupContent={
               <div className="p-2 min-w-[200px]">
                 <h3 className="font-semibold flex items-center gap-2 text-blue-800">
                   <Droplets className="w-4 h-4" />
@@ -195,8 +261,8 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
                   </p>
                 </div>
               </div>
-            </Popup>
-          </Marker>
+            }
+          />
         ))}
 
         {/* Water Bodies */}
