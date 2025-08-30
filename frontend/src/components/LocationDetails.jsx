@@ -97,87 +97,32 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
             Production Potential
           </h3>
           {(() => {
-            // Calculate dynamic investment for Production Potential section
-            const calculateDynamicInvestment = () => {
-              const baseScore = overallScore || 250;
-              const energyDistance = proximityData.energy?.distance_km || 50;
-              const demandDistance = proximityData.demand?.distance_km || 30;
-              const waterDistance = proximityData.water?.distance_km || 20;
+            // Use algorithm data instead of hardcoded calculations for Production Potential
+            const useAlgorithmMetrics = () => {
+              const algorithmMetrics = location.production_metrics || {};
               
-              // Dynamic capacity based on location quality and proximity - scaled up for realistic economics
-              let capacity_kg_day = 15000; // Base capacity scaled up
-              if (baseScore > 280) capacity_kg_day = 80000;
-              else if (baseScore > 260) capacity_kg_day = 75000;
-              else if (baseScore > 240) capacity_kg_day = 60000;
-              else capacity_kg_day = 45000;
-              
-              // Adjust capacity based on proximity to demand
-              if (demandDistance < 10) capacity_kg_day *= 1.3;
-              else if (demandDistance > 50) capacity_kg_day *= 0.8;
-              
-              // Land cost varies by location (urban vs rural)
-              let landPricePerAcre = 1.4; // Slightly lower baseline land cost
-              if (energyDistance < 20) landPricePerAcre = 2.5; // Urban
-              else if (energyDistance < 40) landPricePerAcre = 1.8; // Semi-urban
-              
-              // Calculate land requirement (scales with capacity)
-              const landRequired = Math.max(5, capacity_kg_day / 200); // Min 5 acres
-              const landCost = landRequired * landPricePerAcre;
-              
-              // Equipment cost scales with capacity - reduced for better economics
-              const electrolyzerCost = (capacity_kg_day / 1000) * 25; // ₹25Cr per 1000kg/day
-              const powerElectronics = electrolyzerCost * 0.35;
-              const gasProcessing = electrolyzerCost * 0.65;
-              const compression = electrolyzerCost * 0.35;
-              const installation = electrolyzerCost * 0.20;
-              
-              // Infrastructure scales with capacity and location - reduced costs
-              const electricalSubstation = (capacity_kg_day / 1000) * 4;
-              const waterTreatment = (capacity_kg_day / 1000) * 3.5;
-              const buildings = (capacity_kg_day / 1000) * 4.5;
-              
-              // Permits cost more in urban areas
-              const permitsBase = (capacity_kg_day / 1000) * 10;
-              const permitsMultiplier = energyDistance < 30 ? 1.2 : 1.0;
-              const permitsCost = permitsBase * permitsMultiplier;
-              
-              // Working capital
-              const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
-              const infrastructureTotal = electricalSubstation + waterTreatment + buildings;
-              const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
-              const workingCapital = totalBeforeWC * 0.10;
-              
-              // Operating costs vary by location - more favorable rates for large scale
-              const electricityRate = energyDistance < 20 ? 2.8 : 2.5; // Better bulk rates
-              const annualElectricity = (capacity_kg_day * 365 * 0.85 * 55 * electricityRate) / 10_000_000;
-              const annualWater = (capacity_kg_day / 1000) * 0.5; // Reduced water costs
-              const staffCount = Math.max(25, capacity_kg_day / 2000); // Better staffing efficiency
-              const annualStaff = (staffCount / 25) * 3.5;
-              const annualMaintenance = totalBeforeWC * 0.015; // Lower maintenance
-              const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.10;
-              
-              // Revenue varies by market proximity - better pricing for large scale
-              const hydrogenPrice = demandDistance < 15 ? 420 : demandDistance < 30 ? 400 : 380;
-              const annualProduction = capacity_kg_day * 365 * 0.85;
-              const annualRevenue = (annualProduction * hydrogenPrice) / 10_000_000;
-              const totalOpex = annualElectricity + annualWater + annualStaff + annualMaintenance + annualOther;
-              const annualProfit = annualRevenue - totalOpex;
-              
-              // Financial metrics
-              const totalCapex = totalBeforeWC + workingCapital;
-              const roi = (annualProfit / totalCapex) * 100;
-              // Payback only makes sense with positive annual profit; otherwise it's effectively "never"
-              const payback = annualProfit > 0 ? (totalCapex / annualProfit) : Number.POSITIVE_INFINITY;
+              // Use algorithm-calculated values directly when available
+              const projected_cost_per_kg = algorithmMetrics.projected_cost_per_kg || 
+                                           (productionMetrics.projected_cost_per_kg || 350);
+              const annual_capacity_mt = algorithmMetrics.annual_capacity_mt || 
+                                        (productionMetrics.annual_capacity_mt || 25);
+              const payback_period_years = algorithmMetrics.payback_period_years || 
+                                          (productionMetrics.payback_period_years || "N/A");
+              const roi_percentage = algorithmMetrics.roi_percentage || 
+                                    (productionMetrics.roi_percentage || "N/A");
               
               return {
-                projected_cost_per_kg: Math.round(hydrogenPrice),
-                annual_capacity_mt: Math.round((annualProduction / 1000) * 10) / 10,
-                payback_period_years: Number.isFinite(payback) ? Math.round(payback * 10) / 10 : "Never",
-                roi_percentage: Math.round(roi * 10) / 10
+                projected_cost_per_kg: Math.round(projected_cost_per_kg),
+                annual_capacity_mt: Math.round(annual_capacity_mt * 10) / 10,
+                payback_period_years: payback_period_years === "N/A" ? "N/A" : 
+                                     (Number.isFinite(payback_period_years) ? 
+                                      Math.round(payback_period_years * 10) / 10 : "Never"),
+                roi_percentage: roi_percentage === "N/A" ? "N/A" : 
+                               Math.round(roi_percentage * 10) / 10
               };
             };
 
-            const dynamicMetrics = calculateDynamicInvestment();
+            const dynamicMetrics = useAlgorithmMetrics();
 
             return (
               <>
@@ -345,87 +290,32 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
 
         {/* Enhanced Economic Analysis */}
         {(() => {
-          // Calculate dynamic investment for Economic Analysis section
-          const calculateDynamicInvestment = () => {
-            const baseScore = overallScore || 250;
-            const energyDistance = proximityData.energy?.distance_km || 50;
-            const demandDistance = proximityData.demand?.distance_km || 30;
-            const waterDistance = proximityData.water?.distance_km || 20;
+          // Use algorithm data for Economic Analysis section
+          const getAlgorithmEconomicData = () => {
+            const algorithmMetrics = location.production_metrics || {};
             
-            // Dynamic capacity based on location quality and proximity - scaled up for realistic economics
-            let capacity_kg_day = 15000; // Base capacity scaled up
-            if (baseScore > 280) capacity_kg_day = 80000;
-            else if (baseScore > 260) capacity_kg_day = 75000;
-            else if (baseScore > 240) capacity_kg_day = 60000;
-            else capacity_kg_day = 45000;
-            
-            // Adjust capacity based on proximity to demand
-            if (demandDistance < 10) capacity_kg_day *= 1.3;
-            else if (demandDistance > 50) capacity_kg_day *= 0.8;
-            
-            // Land cost varies by location (urban vs rural)
-            let landPricePerAcre = 1.4; // Slightly lower baseline land cost
-            if (energyDistance < 20) landPricePerAcre = 2.5; // Urban
-            else if (energyDistance < 40) landPricePerAcre = 1.8; // Semi-urban
-            
-            // Calculate land requirement (scales with capacity)
-            const landRequired = Math.max(5, capacity_kg_day / 200); // Min 5 acres
-            const landCost = landRequired * landPricePerAcre;
-            
-            // Equipment cost scales with capacity - reduced for better economics
-            const electrolyzerCost = (capacity_kg_day / 1000) * 25; // ₹25Cr per 1000kg/day
-            const powerElectronics = electrolyzerCost * 0.35;
-            const gasProcessing = electrolyzerCost * 0.65;
-            const compression = electrolyzerCost * 0.35;
-            const installation = electrolyzerCost * 0.20;
-            
-            // Infrastructure scales with capacity and location - reduced costs
-            const electricalSubstation = (capacity_kg_day / 1000) * 4;
-            const waterTreatment = (capacity_kg_day / 1000) * 3.5;
-            const buildings = (capacity_kg_day / 1000) * 4.5;
-            
-            // Permits cost more in urban areas
-            const permitsBase = (capacity_kg_day / 1000) * 10;
-            const permitsMultiplier = energyDistance < 30 ? 1.2 : 1.0;
-            const permitsCost = permitsBase * permitsMultiplier;
-            
-            // Working capital
-            const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
-            const infrastructureTotal = electricalSubstation + waterTreatment + buildings;
-            const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
-            const workingCapital = totalBeforeWC * 0.10;
-            
-            // Operating costs vary by location - more favorable rates for large scale
-            const electricityRate = energyDistance < 20 ? 2.8 : 2.5; // Better bulk rates
-            const annualElectricity = (capacity_kg_day * 365 * 0.85 * 55 * electricityRate) / 10_000_000;
-            const annualWater = (capacity_kg_day / 1000) * 0.5; // Reduced water costs
-            const staffCount = Math.max(25, capacity_kg_day / 2000); // Better staffing efficiency
-            const annualStaff = (staffCount / 25) * 3.5;
-            const annualMaintenance = totalBeforeWC * 0.015; // Lower maintenance
-            const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.10;
-            
-            // Revenue varies by market proximity - better pricing for large scale
-            const hydrogenPrice = demandDistance < 15 ? 420 : demandDistance < 30 ? 400 : 380;
-            const annualProduction = capacity_kg_day * 365 * 0.85;
-            const annualRevenue = (annualProduction * hydrogenPrice) / 10_000_000;
-            const totalOpex = annualElectricity + annualWater + annualStaff + annualMaintenance + annualOther;
-            const annualProfit = annualRevenue - totalOpex;
-            
-            // Financial metrics
-            const totalCapex = totalBeforeWC + workingCapital;
-            const roi = (annualProfit / totalCapex) * 100;
-            // Payback only makes sense with positive annual profit; otherwise it's effectively "never"
-            const payback = annualProfit > 0 ? (totalCapex / annualProfit) : Number.POSITIVE_INFINITY;
+            // Use algorithm-calculated values directly
+            const projected_cost_per_kg = algorithmMetrics.projected_cost_per_kg || 
+                                         (productionMetrics.projected_cost_per_kg || 350);
+            const annual_capacity_mt = algorithmMetrics.annual_capacity_mt || 
+                                      (productionMetrics.annual_capacity_mt || 25);
+            const payback_period_years = algorithmMetrics.payback_period_years || 
+                                        (productionMetrics.payback_period_years || "N/A");
+            const roi_percentage = algorithmMetrics.roi_percentage || 
+                                  (productionMetrics.roi_percentage || "N/A");
             
             return {
-              projected_cost_per_kg: Math.round(hydrogenPrice),
-              annual_capacity_mt: Math.round((annualProduction / 1000) * 10) / 10,
-              payback_period_years: Number.isFinite(payback) ? Math.round(payback * 10) / 10 : "Never",
-              roi_percentage: Math.round(roi * 10) / 10
+              projected_cost_per_kg: Math.round(projected_cost_per_kg),
+              annual_capacity_mt: Math.round(annual_capacity_mt * 10) / 10,
+              payback_period_years: payback_period_years === "N/A" ? "N/A" : 
+                                   (Number.isFinite(payback_period_years) ? 
+                                    Math.round(payback_period_years * 10) / 10 : "Never"),
+              roi_percentage: roi_percentage === "N/A" ? "N/A" : 
+                             Math.round(roi_percentage * 10) / 10
             };
           };
 
-          const dynamicMetrics = calculateDynamicInvestment();
+          const dynamicMetrics = getAlgorithmEconomicData();
 
           return (
             <div className="space-y-4">
@@ -525,94 +415,138 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
                 </h4>
 
                 {(() => {
-                  // Calculate dynamic investment based on location characteristics
-                  const calculateDynamicInvestment = () => {
-                    const baseScore = overallScore || 250;
-                    const energyDistance = proximityData.energy?.distance_km || 50;
-                    const demandDistance = proximityData.demand?.distance_km || 30;
-                    const waterDistance = proximityData.water?.distance_km || 20;
+                  // Use algorithm-calculated data instead of hardcoded calculations
+                  const calculateAlgorithmBasedInvestment = () => {
+                    // Get algorithm data from backend calculations
+                    const algorithmMetrics = location.production_metrics || {};
+                    const energyData = proximityData.energy || {};
+                    const demandData = proximityData.demand || {};
+                    const waterData = proximityData.water || {};
+                    const transportData = proximityData.transport || {};
                     
-                    // Dynamic capacity based on location quality and proximity - scaled up for realistic economics
-                    let capacity_kg_day = 15000; // Base capacity scaled up
-                    if (baseScore > 280) capacity_kg_day = 80000;
-                    else if (baseScore > 260) capacity_kg_day = 75000;
-                    else if (baseScore > 240) capacity_kg_day = 60000;
-                    else capacity_kg_day = 45000;
+                    // Use algorithm-calculated capacity, not hardcoded values
+                    const capacity_kg_day = algorithmMetrics.capacity_kg_day || 
+                                          (algorithmMetrics.annual_capacity_mt ? 
+                                           Math.round(algorithmMetrics.annual_capacity_mt * 1000 / 330) : 30000);
                     
-                    // Adjust capacity based on proximity to demand
-                    if (demandDistance < 10) capacity_kg_day *= 1.3;
-                    else if (demandDistance > 50) capacity_kg_day *= 0.8;
+                    // Calculate dynamic land costs based on proximity to infrastructure
+                    const energyDistance = energyData.distance_km || 50;
+                    const baseUrbanLevel = energyDistance < 15 ? 'urban' : energyDistance < 30 ? 'semi-urban' : 'rural';
+                    let landPricePerAcre = baseUrbanLevel === 'urban' ? 3.2 : 
+                                          baseUrbanLevel === 'semi-urban' ? 2.1 : 1.6;
                     
-                    // Land cost varies by location (urban vs rural)
-                    let landPricePerAcre = 1.4; // Slightly lower baseline land cost
-                    if (energyDistance < 20) landPricePerAcre = 2.5; // Urban
-                    else if (energyDistance < 40) landPricePerAcre = 1.8; // Semi-urban
+                    // Adjust land cost based on overall infrastructure score
+                    const infrastructureBonus = (overallScore - 200) / 100 * 0.8;
+                    landPricePerAcre += Math.max(0, infrastructureBonus);
                     
-                    // Calculate land requirement (scales with capacity)
-                    const landRequired = Math.max(5, capacity_kg_day / 200); // Min 5 acres
+                    // Calculate dynamic land requirement based on actual capacity
+                    const landRequired = Math.max(8, capacity_kg_day / 150); 
                     const landCost = landRequired * landPricePerAcre;
                     
-                    // Equipment cost scales with capacity - reduced for better economics
-                    const electrolyzerCost = (capacity_kg_day / 1000) * 25; // ₹25Cr per 1000kg/day
-                    const powerElectronics = electrolyzerCost * 0.35;
-                    const gasProcessing = electrolyzerCost * 0.65;
-                    const compression = electrolyzerCost * 0.35;
-                    const installation = electrolyzerCost * 0.20;
+                    // Calculate electricity costs based on energy source data
+                    let electricityRate = energyData.cost_per_kwh || 3.2; // Use actual energy cost if available
+                    if (!energyData.cost_per_kwh) {
+                      // Fallback calculation based on energy type and distance
+                      const energyType = energyData.type?.toLowerCase() || 'grid';
+                      electricityRate = energyType.includes('solar') ? 2.8 : 
+                                       energyType.includes('wind') ? 3.0 : 3.5;
+                      // Add distance penalty for transmission
+                      electricityRate += (energyDistance / 20) * 0.3;
+                    }
                     
-                    // Infrastructure scales with capacity and location - reduced costs
-                    const electricalSubstation = (capacity_kg_day / 1000) * 4;
-                    const waterTreatment = (capacity_kg_day / 1000) * 3.5;
-                    const buildings = (capacity_kg_day / 1000) * 4.5;
+                    // Calculate water costs based on water source proximity and quality
+                    const waterDistance = waterData.distance_km || 25;
+                    const waterType = waterData.type?.toLowerCase() || 'municipal';
+                    let waterCostMultiplier = waterType.includes('river') ? 0.8 : 
+                                             waterType.includes('ground') ? 1.0 : 1.2;
+                    waterCostMultiplier += (waterDistance / 30) * 0.4; // Distance penalty
+                    const annualWater = (capacity_kg_day / 1000) * 0.7 * waterCostMultiplier;
                     
-                    // Permits cost more in urban areas
-                    const permitsBase = (capacity_kg_day / 1000) * 10;
-                    const permitsMultiplier = energyDistance < 30 ? 1.2 : 1.0;
-                    const permitsCost = permitsBase * permitsMultiplier;
+                    // Use algorithm CAPEX if available, otherwise calculate based on capacity
+                    let totalCapex = algorithmMetrics.capex_crores;
+                    if (!totalCapex) {
+                      // Calculate equipment costs based on actual capacity
+                      const electrolyzerCost = (capacity_kg_day / 1000) * 28;
+                      const powerElectronics = electrolyzerCost * 0.32;
+                      const gasProcessing = electrolyzerCost * 0.68;
+                      const compression = electrolyzerCost * 0.38;
+                      const installation = electrolyzerCost * 0.22;
+                      
+                      // Infrastructure costs scale with capacity and location
+                      const electricalSubstation = (capacity_kg_day / 1000) * 5.2;
+                      const waterTreatment = (capacity_kg_day / 1000) * 4.1 * waterCostMultiplier;
+                      const buildings = (capacity_kg_day / 1000) * 5.8;
+                      
+                      // Transport connectivity costs based on transport data
+                      const connectivityScore = transportData.connectivity_score || 0.7;
+                      const transportDistance = transportData.distance_km || 40;
+                      const connectivityCost = (1 - connectivityScore) * (capacity_kg_day / 1000) * 3.0;
+                      const accessRoadCost = Math.max(0, (transportDistance - 10) / 10) * 0.8;
+                      
+                      // Permits based on location complexity
+                      const permitsBase = (capacity_kg_day / 1000) * 12;
+                      const locationComplexity = baseUrbanLevel === 'urban' ? 1.4 : 
+                                                baseUrbanLevel === 'semi-urban' ? 1.1 : 0.9;
+                      const permitsCost = permitsBase * locationComplexity;
+                      
+                      const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
+                      const infrastructureTotal = electricalSubstation + waterTreatment + buildings + connectivityCost + accessRoadCost;
+                      const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
+                      const workingCapital = totalBeforeWC * 0.12;
+                      
+                      totalCapex = totalBeforeWC + workingCapital;
+                    }
                     
-                    // Working capital
-                    const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
-                    const infrastructureTotal = electricalSubstation + waterTreatment + buildings;
-                    const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
-                    const workingCapital = totalBeforeWC * 0.10;
+                    // Calculate operational costs based on location factors
+                    const annualElectricity = (capacity_kg_day * 365 * 0.87 * 52 * electricityRate) / 10_000_000;
                     
-                    // Operating costs vary by location - more favorable rates for large scale
-                    const electricityRate = energyDistance < 20 ? 2.8 : 2.5; // Better bulk rates
-                    const annualElectricity = (capacity_kg_day * 365 * 0.85 * 55 * electricityRate) / 10_000_000;
-                    const annualWater = (capacity_kg_day / 1000) * 0.5; // Reduced water costs
-                    const staffCount = Math.max(25, capacity_kg_day / 2000); // Better staffing efficiency
-                    const annualStaff = (staffCount / 25) * 3.5;
-                    const annualMaintenance = totalBeforeWC * 0.015; // Lower maintenance
-                    const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.10;
+                    // Labor costs based on location (urban vs rural wage differences)
+                    const laborMultiplier = baseUrbanLevel === 'urban' ? 1.3 : 
+                                          baseUrbanLevel === 'semi-urban' ? 1.1 : 0.9;
+                    const staffCount = Math.max(28, capacity_kg_day / 1800);
+                    const annualStaff = (staffCount / 25) * 4.2 * laborMultiplier;
                     
-                    // Revenue varies by market proximity - better pricing for large scale
-                    const hydrogenPrice = demandDistance < 15 ? 420 : demandDistance < 30 ? 400 : 380;
-                    const annualProduction = capacity_kg_day * 365 * 0.85;
+                    const annualMaintenance = totalCapex * 0.018;
+                    const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.12;
+                    
+                    // Revenue calculation based on demand proximity and volume
+                    const demandDistance = demandData.distance_km || 35;
+                    const demandVolume = demandData.demand_mt_year || 5000;
+                    let hydrogenPrice = algorithmMetrics.projected_cost_per_kg || 380;
+                    
+                    // Adjust price based on market proximity and demand strength
+                    if (demandDistance < 20 && demandVolume > 8000) {
+                      hydrogenPrice *= 1.15; // Premium for strong local demand
+                    } else if (demandDistance > 40 || demandVolume < 3000) {
+                      hydrogenPrice *= 0.92; // Discount for distant/weak markets
+                    }
+                    
+                    const annualProduction = capacity_kg_day * 365 * 0.87;
                     const annualRevenue = (annualProduction * hydrogenPrice) / 10_000_000;
                     const totalOpex = annualElectricity + annualWater + annualStaff + annualMaintenance + annualOther;
                     const annualProfit = annualRevenue - totalOpex;
                     
-                    // Financial metrics
-                    const totalCapex = totalBeforeWC + workingCapital;
-                    const roi = (annualProfit / totalCapex) * 100;
-                    // Payback only makes sense with positive annual profit; otherwise it's effectively "never"
-                    const payback = annualProfit > 0 ? (totalCapex / annualProfit) : Number.POSITIVE_INFINITY;
+                    // Use algorithm ROI and payback if available
+                    const roi = algorithmMetrics.roi_percentage || ((annualProfit / totalCapex) * 100);
+                    const payback = algorithmMetrics.payback_period_years || 
+                                   (annualProfit > 0 ? (totalCapex / annualProfit) : Number.POSITIVE_INFINITY);
                     
                     return {
                       capacity_kg_day: Math.round(capacity_kg_day),
                       land_required_acres: Math.round(landRequired * 10) / 10,
                       land_cost: Math.round(landCost * 10) / 10,
-                      electrolyzer_cost: Math.round(electrolyzerCost * 10) / 10,
-                      power_electronics: Math.round(powerElectronics * 10) / 10,
-                      gas_processing: Math.round(gasProcessing * 10) / 10,
-                      compression: Math.round(compression * 10) / 10,
-                      installation: Math.round(installation * 10) / 10,
-                      equipment_total: Math.round(equipmentTotal * 10) / 10,
-                      electrical_substation: Math.round(electricalSubstation * 10) / 10,
-                      water_treatment: Math.round(waterTreatment * 10) / 10,
-                      buildings: Math.round(buildings * 10) / 10,
-                      infrastructure_total: Math.round(infrastructureTotal * 10) / 10,
-                      permits_cost: Math.round(permitsCost * 10) / 10,
-                      working_capital: Math.round(workingCapital * 10) / 10,
+                      electrolyzer_cost: Math.round((totalCapex * 0.35) * 10) / 10,
+                      power_electronics: Math.round((totalCapex * 0.11) * 10) / 10,
+                      gas_processing: Math.round((totalCapex * 0.18) * 10) / 10,
+                      compression: Math.round((totalCapex * 0.12) * 10) / 10,
+                      installation: Math.round((totalCapex * 0.08) * 10) / 10,
+                      equipment_total: Math.round((totalCapex * 0.84) * 10) / 10,
+                      electrical_substation: Math.round((totalCapex * 0.08) * 10) / 10,
+                      water_treatment: Math.round((totalCapex * 0.06) * 10) / 10,
+                      buildings: Math.round((totalCapex * 0.02) * 10) / 10,
+                      infrastructure_total: Math.round((totalCapex * 0.16) * 10) / 10,
+                      permits_cost: Math.round((totalCapex * 0.04) * 10) / 10,
+                      working_capital: Math.round((totalCapex * 0.12) * 10) / 10,
                       total_capex: Math.round(totalCapex * 10) / 10,
                       annual_electricity: Math.round(annualElectricity * 10) / 10,
                       annual_water: Math.round(annualWater * 10) / 10,
@@ -624,14 +558,14 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
                       annual_profit: Math.round(annualProfit * 10) / 10,
                       roi_percentage: Math.round(roi * 10) / 10,
                       payback_years: Number.isFinite(payback) ? Math.round(payback * 10) / 10 : Infinity,
-                      hydrogen_price: hydrogenPrice,
-                      electricity_rate: electricityRate,
-                      staff_count: staffCount,
-                      land_price_per_acre: landPricePerAcre
+                      hydrogen_price: Math.round(hydrogenPrice),
+                      electricity_rate: Math.round(electricityRate * 100) / 100,
+                      staff_count: Math.round(staffCount),
+                      land_price_per_acre: Math.round(landPricePerAcre * 100) / 100
                     };
                   };
                   
-                  const dynamicData = calculateDynamicInvestment();
+                  const dynamicData = calculateAlgorithmBasedInvestment();
                   
                   return (
                     <>
