@@ -70,40 +70,7 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
               {overallScore}/100
             </Badge>
           </div>
-<<<<<<< HEAD
           <p className="text-sm text-muted-foreground">
-=======
-          
-          {/* Overall Grade */}
-          <p className="text-sm font-medium text-mocha mb-2">
-            {location.overall_grade || getScoreLabel(overallScore)}
-          </p>
-          
-          {/* Score Breakdown */}
-          {(location.infrastructure_score || location.economic_score) && (
-            <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-              <div className="bg-white/60 p-2 rounded border">
-                <span className="text-gray-600">Infrastructure:</span>
-                <span className="font-medium ml-1 text-blue-700">{location.infrastructure_score || 'N/A'}/100</span>
-              </div>
-              <div className="bg-white/60 p-2 rounded border">
-                <span className="text-gray-600">Economics:</span>
-                <span className="font-medium ml-1 text-green-700">{location.economic_score || 'N/A'}/100</span>
-              </div>
-            </div>
-          )}
-          
-          {/* Economic Grade */}
-          {location.economic_analysis?.economic_grade && (
-            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-              <span className="text-xs text-yellow-800 font-medium">
-                📊 Economic Grade: {location.economic_analysis.economic_grade}
-              </span>
-            </div>
-          )}
-          
-          <p className="text-xs text-mocha/70 mt-2">
->>>>>>> f40fd88f998dbec11803967831c762721330cd97
             Coordinates: {coordinates[0]?.toFixed(4) || 'N/A'}°, {coordinates[1]?.toFixed(4) || 'N/A'}°
           </p>
         </div>
@@ -276,17 +243,6 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
 
         <Separator className="bg-border" />
 
-<<<<<<< HEAD
-        {/* Investment Summary */}
-        <div className="bg-muted border border-border p-3 rounded-lg">
-          <h4 className="font-medium text-foreground mb-2">Investment Recommendation</h4>
-          <p className="text-sm text-muted-foreground">
-            This location offers {getScoreLabel(overallScore).toLowerCase()} potential for green hydrogen production 
-            with competitive costs and strategic positioning near key infrastructure. 
-            {productionMetrics.roi_percentage && productionMetrics.roi_percentage > 15 && 
-              ' High ROI potential makes this an attractive investment opportunity.'}
-          </p>
-=======
         {/* Enhanced Economic Analysis */}
         {productionMetrics && (
           <div className="space-y-4">
@@ -655,7 +611,6 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
               );
             })()}
           </div>
->>>>>>> f40fd88f998dbec11803967831c762721330cd97
         </div>
       </CardContent>
     </>
