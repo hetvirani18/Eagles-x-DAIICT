@@ -199,6 +199,78 @@ class WeightedAnalysisRequest(BaseModel):
     transport_weight: float = 0.10
     water_body_weight: float = 0.05
 
+# Pipeline Infrastructure Models
+class PipelineType(str, Enum):
+    NATURAL_GAS = "Natural Gas"
+    HYDROGEN = "Hydrogen" 
+    CRUDE_OIL = "Crude Oil"
+    PRODUCT = "Product"
+    PLANNED_HYDROGEN = "Planned Hydrogen"
+
+class PipelineStatus(str, Enum):
+    OPERATIONAL = "Operational"
+    UNDER_CONSTRUCTION = "Under Construction"
+    PLANNED = "Planned"
+    DECOMMISSIONED = "Decommissioned"
+
+class Pipeline(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    type: PipelineType
+    status: PipelineStatus
+    route_points: List[LocationPoint]  # Array of lat/lng points defining the route
+    diameter_inches: float
+    length_km: float
+    capacity_mmscfd: Optional[float] = None  # Million standard cubic feet per day
+    pressure_bar: Optional[float] = None
+    operator: str
+    commissioned_date: Optional[datetime] = None
+    planned_completion: Optional[datetime] = None
+    investment_cost_cr: Optional[float] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Storage Facility Models
+class StorageType(str, Enum):
+    UNDERGROUND_CAVERN = "Underground Cavern"
+    ABOVE_GROUND_TANK = "Above Ground Tank"
+    COMPRESSED_GAS = "Compressed Gas"
+    LIQUID_HYDROGEN = "Liquid Hydrogen"
+    UNDERGROUND_LINED = "Underground Lined"
+
+class StorageFacility(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    type: StorageType
+    location: LocationPoint
+    capacity_kg: float
+    working_pressure_bar: float
+    storage_medium: str  # "Hydrogen", "Natural Gas", etc.
+    operator: str
+    commissioned_date: Optional[datetime] = None
+    safety_zone_radius_m: float = 500
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Distribution Hub Models
+class DistributionType(str, Enum):
+    TRUCK_LOADING = "Truck Loading"
+    DISPENSING_STATION = "Dispensing Station"
+    RAIL_LOADING = "Rail Loading"
+    MARINE_TERMINAL = "Marine Terminal"
+    INTERCONNECT = "Pipeline Interconnect"
+
+class DistributionHub(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    type: DistributionType
+    location: LocationPoint
+    daily_capacity_kg: float
+    storage_capacity_kg: Optional[float] = None
+    operator: str
+    served_industries: List[str] = []
+    transport_modes: List[str] = []
+    commissioned_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 class LocationAnalysis(BaseModel):
     location: LocationPoint
     overall_score: float

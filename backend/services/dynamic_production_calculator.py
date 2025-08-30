@@ -311,9 +311,28 @@ def analyze_location_production_potential(electricity_mw: float, electricity_pri
         land_price_per_acre_cr=land_price_per_acre_cr
     )
     
+    # Dynamic pricing based on electricity cost and market conditions
+    base_price = 180  # Base production cost floor
+    electricity_cost_factor = electricity_price * 55  # 55 kWh per kg H2
+    margin_factor = 1.18  # 18% base margin
+    
+    # Market scale adjustment
+    if total_demand_kg_day > 10000:
+        scale_factor = 0.95  # 5% discount for large scale
+    elif total_demand_kg_day < 2000:
+        scale_factor = 1.08  # 8% premium for small scale
+    else:
+        scale_factor = 1.0
+    
+    # Competition adjustment
+    competition_factor = 1.12 if total_demand_kg_day > 5000 else 1.05
+    
+    dynamic_price = max(base_price, (electricity_cost_factor + 50) * margin_factor * scale_factor * competition_factor)
+    dynamic_price = min(480, dynamic_price)  # Cap at reasonable maximum
+    
     market = MarketDemand(
         total_demand_kg_day=total_demand_kg_day,
-        current_price_per_kg=350,  # ₹350/kg
+        current_price_per_kg=dynamic_price,  # Dynamic pricing based on local conditions
         industrial_buyers=[],
         competition_supply_kg_day=total_demand_kg_day * 0.3  # Assume 30% existing supply
     )

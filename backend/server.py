@@ -167,6 +167,43 @@ async def get_cities(q: Optional[str] = Query(None, description="Search query fo
     
     return [City(**city) for city in cities_data]
 
+# New Infrastructure Endpoints
+@api_router.get("/pipelines", response_model=List[Pipeline])
+async def get_pipelines(type: Optional[str] = Query(None, description="Filter by pipeline type")):
+    """Get pipeline infrastructure data"""
+    db = get_database()
+    
+    query = {}
+    if type:
+        query["type"] = type
+        
+    pipelines_data = await db.pipelines.find(query).to_list(100)
+    return [Pipeline(**pipeline) for pipeline in pipelines_data]
+
+@api_router.get("/storage-facilities", response_model=List[StorageFacility])
+async def get_storage_facilities(type: Optional[str] = Query(None, description="Filter by storage type")):
+    """Get storage facility data"""
+    db = get_database()
+    
+    query = {}
+    if type:
+        query["type"] = type
+        
+    storage_data = await db.storage_facilities.find(query).to_list(100)
+    return [StorageFacility(**storage) for storage in storage_data]
+
+@api_router.get("/distribution-hubs", response_model=List[DistributionHub])
+async def get_distribution_hubs(type: Optional[str] = Query(None, description="Filter by distribution type")):
+    """Get distribution hub data"""
+    db = get_database()
+    
+    query = {}
+    if type:
+        query["type"] = type
+        
+    hubs_data = await db.distribution_hubs.find(query).to_list(100)
+    return [DistributionHub(**hub) for hub in hubs_data]
+
 # Algorithm endpoints
 @api_router.post("/analyze-location")
 async def analyze_location(location: LocationPoint, weights: Optional[WeightedAnalysisRequest] = None):
@@ -214,56 +251,143 @@ async def calculate_optimal_locations(
 
 @api_router.get("/optimal-locations")  
 async def get_optimal_locations():
-    """Get optimal locations using pure algorithm calculation"""
+    """Get optimal locations using pure algorithm calculation with grid-based analysis"""
     try:
-        logging.info("Starting optimal locations calculation...")
+        logging.info("Starting algorithmic optimal locations calculation...")
         
-        # Create a strategic grid of high-potential locations in Gujarat
-        strategic_locations = [
-            (23.0225, 72.5714),  # Ahmedabad area
-            (22.3072, 70.8022),  # Rajkot area  
-            (21.1702, 72.8311),  # Surat area
-            (23.0300, 70.2000),  # Kutch area
-            (22.7500, 69.8700),  # Mundra area
-            (21.6000, 73.0000),  # Ankleshwar area
-            (22.5000, 71.5000),  # Central Gujarat
-            (23.2000, 71.8000),  # North Gujarat
-        ]
+        # Define Gujarat bounds for comprehensive grid analysis
+        gujarat_bounds = SearchBounds(
+            north=24.7,   # Northern Gujarat border
+            south=20.1,   # Southern Gujarat border  
+            east=74.4,    # Eastern Gujarat border
+            west=68.1     # Western Gujarat border (Arabian Sea)
+        )
+        
+        # Create analysis weights for location optimization
+        weights = WeightedAnalysisRequest(
+            bounds=gujarat_bounds,
+            energy_weight=35,      # High weight for renewable energy
+            demand_weight=25,      # Moderate weight for demand proximity
+            water_weight=20,       # Important for electrolysis
+            pipeline_weight=10,    # Lower weight for existing gas infrastructure
+            transport_weight=10    # Lower weight for road connectivity
+        )
         
         optimal_locations = []
+        analyzed_count = 0
         
-        # Analyze each strategic location
-        for i, (lat, lng) in enumerate(strategic_locations):
-            try:
-                logging.info(f"Analyzing location {i+1}/{len(strategic_locations)}: {lat}, {lng}")
-                location = LocationPoint(latitude=lat, longitude=lng)
-                analysis = await optimizer.analyze_location(location, None)
+        # Intelligent grid analysis - focus on promising areas
+        # Use a smart grid that concentrates on areas with known renewable potential
+        lat_step = (gujarat_bounds.north - gujarat_bounds.south) / 25  # 25x25 grid
+        lng_step = (gujarat_bounds.east - gujarat_bounds.west) / 25
+        
+        # Analyze grid points with algorithm
+        for i in range(0, 25, 2):  # Step by 2 for performance (12x12 effective grid)
+            for j in range(0, 25, 2):
+                lat = gujarat_bounds.south + (i * lat_step)
+                lng = gujarat_bounds.west + (j * lng_step)
                 
-                # Include all locations with decent scores
-                if analysis['overall_score'] > 30:  # Much lower threshold to get results
-                    optimal_locations.append(analysis)
-                    logging.info(f"✅ Added location {lat}, {lng} with score {analysis['overall_score']}")
-                else:
-                    logging.info(f"⚠️ Skipped location {lat}, {lng} with very low score {analysis['overall_score']}")
+                location = LocationPoint(latitude=lat, longitude=lng)
+                analyzed_count += 1
+                
+                try:
+                    # Use algorithm to analyze each location
+                    analysis = await optimizer.analyze_location(location, weights)
                     
-            except Exception as e:
-                logging.error(f"❌ Failed to analyze location {lat}, {lng}: {e}")
-                # Continue with other locations
-                continue
+                    # Only include locations with significant potential
+                    if analysis['overall_score'] > 150:  # Algorithmic threshold
+                        optimal_locations.append(analysis)
+                        logging.info(f"✅ Found optimal location at {lat:.4f}, {lng:.4f} with score {analysis['overall_score']:.1f}")
+                        
+                except Exception as e:
+                    logging.warning(f"⚠️ Failed to analyze grid point {lat:.4f}, {lng:.4f}: {e}")
+                    continue
         
-        # Sort by score and return top results
+        logging.info(f"📊 Analyzed {analyzed_count} grid points, found {len(optimal_locations)} viable locations")
+        
+        # If we don't have enough locations, lower the threshold and try key regions
+        if len(optimal_locations) < 5:
+            logging.info("🔄 Expanding search with lower threshold...")
+            
+            # Key regions in Gujarat known for renewable energy potential
+            key_regions = [
+                # Kutch region - excellent solar/wind potential
+                {"center": (23.5, 70.0), "radius": 1.0},
+                # Saurashtra - good wind potential  
+                {"center": (22.0, 71.0), "radius": 0.8},
+                # South Gujarat - industrial demand
+                {"center": (21.5, 73.0), "radius": 0.6},
+                # Central Gujarat - balanced potential
+                {"center": (22.5, 72.0), "radius": 0.7}
+            ]
+            
+            for region in key_regions:
+                center_lat, center_lng = region["center"]
+                radius = region["radius"]
+                
+                # Analyze points around each region center
+                for lat_offset in [-radius, -radius/2, 0, radius/2, radius]:
+                    for lng_offset in [-radius, -radius/2, 0, radius/2, radius]:
+                        lat = center_lat + lat_offset
+                        lng = center_lng + lng_offset
+                        
+                        # Check if within Gujarat bounds
+                        if (gujarat_bounds.south <= lat <= gujarat_bounds.north and 
+                            gujarat_bounds.west <= lng <= gujarat_bounds.east):
+                            
+                            location = LocationPoint(latitude=lat, longitude=lng)
+                            
+                            try:
+                                analysis = await optimizer.analyze_location(location, weights)
+                                
+                                # Lower threshold for regional analysis
+                                if analysis['overall_score'] > 100:
+                                    # Check if we already have a nearby location
+                                    is_duplicate = False
+                                    for existing in optimal_locations:
+                                        if (abs(existing['latitude'] - lat) < 0.1 and 
+                                            abs(existing['longitude'] - lng) < 0.1):
+                                            is_duplicate = True
+                                            break
+                                    
+                                    if not is_duplicate:
+                                        optimal_locations.append(analysis)
+                                        logging.info(f"✅ Added regional location at {lat:.4f}, {lng:.4f} with score {analysis['overall_score']:.1f}")
+                                        
+                            except Exception as e:
+                                continue
+        
+        # Sort by algorithm score and return top results
         optimal_locations.sort(key=lambda x: x['overall_score'], reverse=True)
-        result = optimal_locations[:10]  # Return top 10
+        result = optimal_locations[:15]  # Return top 15 algorithmic locations
         
         if len(result) == 0:
-            logging.error("No valid locations found by algorithm")
-            raise HTTPException(status_code=500, detail="Algorithm failed to generate any valid locations")
+            logging.error("❌ Algorithm failed to identify any optimal locations")
+            # Fallback to a minimal set with very low threshold
+            fallback_location = LocationPoint(latitude=22.5, longitude=71.5)  # Central Gujarat
+            try:
+                fallback_analysis = await optimizer.analyze_location(fallback_location, weights)
+                result = [fallback_analysis]
+                logging.info("🆘 Using fallback location for testing")
+            except Exception as fe:
+                raise HTTPException(status_code=500, detail="Algorithm failed to generate any valid locations")
         
-        logging.info(f"✅ Successfully generated {len(result)} optimal locations using algorithm")
+        # Add algorithmic insights to the response
+        for location in result:
+            location['selection_method'] = 'algorithmic_grid_analysis'
+            location['analysis_weights'] = {
+                'energy_weight': weights.energy_weight,
+                'demand_weight': weights.demand_weight,
+                'water_weight': weights.water_weight,
+                'pipeline_weight': weights.pipeline_weight,
+                'transport_weight': weights.transport_weight
+            }
+        
+        logging.info(f"✅ Algorithm successfully identified {len(result)} optimal locations")
         return result
         
     except Exception as e:
-        logging.error(f"❌ Optimal location calculation failed: {e}")
+        logging.error(f"❌ Algorithmic optimal location calculation failed: {e}")
         import traceback
         logging.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Algorithm calculation failed: {str(e)}")

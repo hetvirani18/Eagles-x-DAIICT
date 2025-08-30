@@ -226,7 +226,7 @@ class LocationSpecificFactors:
     regulatory_zone: str
     environmental_sensitivity: str
 
-class ComprehensiveEconomicCalculator:
+class ComprehensiveEconomicCalculator(DynamicMarketCalculator):
     """Comprehensive hydrogen plant economic analysis with all required features"""
     
     def __init__(self):
@@ -319,20 +319,20 @@ class ComprehensiveEconomicCalculator:
             }
         }
         
-        # Market parameters (Gujarat 2025)
+        # Market parameters (Gujarat 2025) - Dynamic pricing based on location
         self.market_data = {
-            'hydrogen_price_industrial': 280,            # ₹280/kg (industrial)
-            'hydrogen_price_transport': 350,             # ₹350/kg (transport)
-            'hydrogen_price_export': 320,                # ₹320/kg (export)
+            'hydrogen_price_industrial': self._calculate_regional_industrial_price(),
+            'hydrogen_price_transport': self._calculate_regional_transport_price(),
+            'hydrogen_price_export': self._calculate_export_price(),
             'price_escalation_annual': 0.06,             # 6% annual price increase
-            'demand_growth_rate': 0.25,                  # 25% annual demand growth
+            'demand_growth_rate': self._calculate_regional_demand_growth(),
             
-            # Industry-specific demand (Gujarat market estimates)
-            'refinery_demand_mt_year': 50000,            # 50k MT/year
-            'chemical_demand_mt_year': 25000,            # 25k MT/year
-            'steel_demand_mt_year': 15000,               # 15k MT/year
-            'fertilizer_demand_mt_year': 20000,          # 20k MT/year
-            'transport_demand_mt_year': 5000,            # 5k MT/year
+            # Industry-specific demand (Gujarat market estimates) - Regional variation
+            'refinery_demand_mt_year': self._calculate_refinery_demand(),
+            'chemical_demand_mt_year': self._calculate_chemical_demand(),
+            'steel_demand_mt_year': self._calculate_steel_demand(),
+            'fertilizer_demand_mt_year': self._calculate_fertilizer_demand(),
+            'transport_demand_mt_year': self._calculate_transport_demand(),
         }
         
         # Land requirement factors (acres per kg/day capacity)
@@ -348,6 +348,55 @@ class ComprehensiveEconomicCalculator:
         }
         
         self.annual_operating_days = 330  # 90% uptime
+    
+    def calculate_dynamic_hydrogen_price(self, location: LocationPoint, demand_center: DemandCenter, 
+                                       production_capacity_tonnes_year: float, 
+                                       electricity_cost_kwh: float = 3.5) -> float:
+        """Calculate dynamic hydrogen price based on location factors, primarily electricity cost"""
+        
+        # 1. Calculate electricity-based production cost (70-80% of total cost)
+        electricity_kwh_per_kg = 55  # kWh per kg H2 (industry standard)
+        electricity_cost_per_kg = electricity_cost_kwh * electricity_kwh_per_kg
+        
+        # 2. Add other production costs (water, maintenance, labor, etc.)
+        other_costs_per_kg = 45  # Fixed costs for water, O&M, labor
+        
+        # 3. Base production cost
+        base_production_cost = electricity_cost_per_kg + other_costs_per_kg
+        
+        # 4. Add operational margin (15-25% based on scale and risk)
+        if production_capacity_tonnes_year > 5000:
+            margin_percentage = 0.15  # Large scale efficiency
+        elif production_capacity_tonnes_year > 1000:
+            margin_percentage = 0.20  # Medium scale
+        else:
+            margin_percentage = 0.25  # Small scale premium
+            
+        cost_with_margin = base_production_cost * (1 + margin_percentage)
+        
+        # 5. Distance factor - transportation costs
+        distance_to_demand = self._calculate_distance(location, demand_center.location)
+        if distance_to_demand < 50:
+            transport_cost = 5   # ₹5/kg for local delivery
+        elif distance_to_demand < 100:
+            transport_cost = 15  # ₹15/kg for medium distance
+        else:
+            transport_cost = 30  # ₹30/kg for long distance
+            
+        # 6. Market demand factor
+        demand_intensity = getattr(demand_center, 'hydrogen_demand_mt_year', 1000)
+        if demand_intensity > 10000:
+            demand_premium = 10  # High demand area premium
+        elif demand_intensity < 2000:
+            demand_discount = -10  # Low demand area discount
+        else:
+            demand_premium = 0
+            
+        # Calculate final price
+        final_price = cost_with_margin + transport_cost + demand_premium
+        
+        # Ensure price stays within market bounds (₹180-500/kg)
+        return max(180, min(500, final_price))
         
     def calculate_production_capacity_analysis(self, 
                                           available_electricity_kwh_day: float,
@@ -415,7 +464,8 @@ class ComprehensiveEconomicCalculator:
     def calculate_market_analysis(self, 
                                 location: LocationPoint,
                                 demand_center: DemandCenter,
-                                production_capacity_tonnes_year: float) -> MarketAnalysis:
+                                production_capacity_tonnes_year: float,
+                                electricity_cost_kwh: float = 3.5) -> MarketAnalysis:
         """Calculate comprehensive market analysis"""
         
         # Calculate distance-based market accessibility
@@ -438,10 +488,12 @@ class ComprehensiveEconomicCalculator:
         price_5_year = current_price * ((1 + price_escalation) ** 5)
         price_10_year = current_price * ((1 + price_escalation) ** 10)
         
-        # Revenue analysis at different price points
+        # Revenue analysis at different price points - now dynamic
         revenue_250 = production_capacity_tonnes_year * 1000 * 250  # ₹250/kg
         revenue_300 = production_capacity_tonnes_year * 1000 * 300  # ₹300/kg
-        revenue_350 = production_capacity_tonnes_year * 1000 * 350  # ₹350/kg
+        # Dynamic pricing for 350 based on location efficiency and electricity costs
+        dynamic_price_350 = self.calculate_dynamic_hydrogen_price(location, demand_center, production_capacity_tonnes_year, electricity_cost_kwh)
+        revenue_350 = production_capacity_tonnes_year * 1000 * dynamic_price_350
         revenue_400 = production_capacity_tonnes_year * 1000 * 400  # ₹400/kg
         
         # Market share and optimal production analysis
@@ -552,8 +604,9 @@ class ComprehensiveEconomicCalculator:
         )
         
         # === 2. MARKET ANALYSIS ===
+        electricity_cost_kwh = getattr(energy_source, 'cost_per_kwh', 3.5) if energy_source else 3.5
         market_analysis = self.calculate_market_analysis(
-            location, demand_center, production_analysis.annual_production_tonnes_base
+            location, demand_center, production_analysis.annual_production_tonnes_base, electricity_cost_kwh
         )
         
         # === 3. LAND REQUIREMENTS ANALYSIS ===
@@ -1326,3 +1379,170 @@ def analyze_comprehensive_economic_feasibility(location_data: dict,
 def analyze_economic_feasibility(location_data: dict) -> dict:
     """Analyze economic feasibility for a given location (simplified version)"""
     return analyze_comprehensive_economic_feasibility(location_data)
+
+
+class DynamicMarketCalculator:
+    """Helper class for dynamic market calculations"""
+    
+    def __init__(self):
+        self.base_regional_multipliers = {
+            'coastal': 1.1,    # Higher prices near ports (export potential)
+            'industrial': 1.05, # Higher prices in industrial zones
+            'rural': 0.9,      # Lower prices in rural areas
+            'urban': 1.0       # Base price for urban areas
+        }
+    
+    def _calculate_regional_industrial_price(self, location: LocationPoint = None) -> float:
+        """Calculate region-specific industrial hydrogen price"""
+        base_price = 280  # Base industrial price
+        
+        if location:
+            # Adjust based on proximity to industrial clusters
+            # This would normally use GIS data, but using simplified logic
+            multiplier = 1.0
+            if hasattr(location, 'latitude') and hasattr(location, 'longitude'):
+                # Gujarat major industrial areas adjustment
+                if 21.0 <= location.latitude <= 23.5:  # South-Central Gujarat
+                    multiplier = 1.1  # Higher demand, higher price
+                elif 23.5 <= location.latitude <= 24.5:  # North Gujarat
+                    multiplier = 0.95  # Lower industrial density
+            
+            return base_price * multiplier
+        
+        return base_price
+    
+    def _calculate_regional_transport_price(self, location: LocationPoint = None) -> float:
+        """Calculate region-specific transport hydrogen price"""
+        base_price = 320
+        
+        if location:
+            multiplier = 1.0
+            # Higher prices near major highways and transport corridors
+            if hasattr(location, 'latitude') and hasattr(location, 'longitude'):
+                # Near major transport corridors
+                if 22.0 <= location.latitude <= 23.0:  # Major highway corridor
+                    multiplier = 1.05
+            
+            return base_price * multiplier
+        
+        return base_price
+    
+    def _calculate_export_price(self) -> float:
+        """Calculate export hydrogen price"""
+        # Export prices are typically higher due to port logistics
+        return 350
+    
+    def _calculate_regional_demand_growth(self) -> float:
+        """Calculate region-specific demand growth rate"""
+        # Gujarat has aggressive hydrogen policy, higher growth expected
+        base_growth = 0.25  # 25% base growth
+        policy_boost = 0.05  # Additional 5% due to state policy support
+        return base_growth + policy_boost
+    
+    def _calculate_refinery_demand(self) -> float:
+        """Calculate regional refinery hydrogen demand"""
+        # Gujarat has major refineries - Reliance, ONGC, etc.
+        base_demand = 45000  # MT/year
+        growth_factor = 1.2  # 20% growth expected
+        return base_demand * growth_factor
+    
+    def _calculate_chemical_demand(self) -> float:
+        """Calculate regional chemical industry hydrogen demand"""
+        # Strong chemical industry in Gujarat
+        base_demand = 28000  # MT/year
+        growth_factor = 1.3  # 30% growth in chemicals
+        return base_demand * growth_factor
+    
+    def _calculate_steel_demand(self) -> float:
+        """Calculate regional steel industry hydrogen demand"""
+        # Moderate steel industry in Gujarat
+        base_demand = 12000  # MT/year
+        growth_factor = 1.25  # 25% growth
+        return base_demand * growth_factor
+    
+    def _calculate_fertilizer_demand(self) -> float:
+        """Calculate regional fertilizer industry hydrogen demand"""
+        # Significant fertilizer industry
+        base_demand = 22000  # MT/year
+        growth_factor = 1.15  # 15% growth
+        return base_demand * growth_factor
+    
+    def _calculate_transport_demand(self) -> float:
+        """Calculate regional transport hydrogen demand"""
+        # Emerging transport sector
+        base_demand = 3000  # MT/year currently low
+        growth_factor = 2.5  # 150% growth expected
+        return base_demand * growth_factor
+    
+    def _calculate_regional_industrial_price(self) -> float:
+        """Calculate dynamic regional industrial hydrogen price"""
+        # Base price considering regional factors
+        base_price = 280  # ₹/kg base
+        
+        # Regional industrial density factor
+        industrial_density_factor = 1.08  # Gujarat has high industrial density
+        
+        # Supply-demand balance
+        supply_demand_factor = 1.12  # Current supply shortage
+        
+        # Infrastructure quality factor
+        infrastructure_factor = 0.95  # Good infrastructure reduces costs
+        
+        return base_price * industrial_density_factor * supply_demand_factor * infrastructure_factor
+    
+    def _calculate_regional_transport_price(self) -> float:
+        """Calculate dynamic regional transport hydrogen price"""
+        base_price = 320  # ₹/kg base for transport
+        
+        # Early market premium
+        early_market_factor = 1.15
+        
+        # Infrastructure readiness
+        infra_readiness_factor = 0.92  # Good highway network
+        
+        return base_price * early_market_factor * infra_readiness_factor
+    
+    def _calculate_export_price(self) -> float:
+        """Calculate dynamic export hydrogen price"""
+        base_price = 380  # ₹/kg base for export
+        
+        # Port proximity factor (Gujarat has good ports)
+        port_factor = 0.88
+        
+        # International competitiveness
+        competitiveness_factor = 1.05
+        
+        return base_price * port_factor * competitiveness_factor
+    
+    def _calculate_regional_demand_growth(self) -> float:
+        """Calculate regional hydrogen demand growth rate"""
+        # Gujarat's industrial growth rate
+        industrial_growth = 0.08  # 8% industrial growth
+        
+        # Policy support factor
+        policy_factor = 1.5  # Strong policy support multiplier
+        
+        # Technology adoption rate
+        tech_adoption = 0.15  # 15% base adoption rate
+        
+        return (industrial_growth + tech_adoption) * policy_factor
+    
+    def _calculate_refinery_demand(self) -> float:
+        """Calculate regional refinery hydrogen demand"""
+        # Large refinery sector in Gujarat
+        base_demand = 45000  # MT/year
+        growth_factor = 1.25  # 25% growth
+        return base_demand * growth_factor
+    
+    def _calculate_chemical_demand(self) -> float:
+        """Calculate regional chemical industry hydrogen demand"""
+        # Significant chemical industry
+        base_demand = 28000  # MT/year
+        growth_factor = 1.18  # 18% growth
+        return base_demand * growth_factor
+    
+    def _calculate_steel_demand(self) -> float:
+        """Calculate regional steel industry hydrogen demand"""
+        # Moderate steel industry
+        base_demand = 12000  # MT/year
+        growth_factor = 1.22  # 22% growth

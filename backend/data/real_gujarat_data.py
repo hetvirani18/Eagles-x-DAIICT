@@ -4,6 +4,7 @@ Source: Government of Gujarat, Ministry of New and Renewable Energy, Industrial 
 """
 
 from models import *
+from datetime import datetime
 
 # REAL GUJARAT ENERGY SOURCES - Comprehensive Solar & Wind Infrastructure
 def get_comprehensive_energy_sources():
@@ -199,4 +200,272 @@ def get_all_gujarat_cities():
               population=25000, district="Bharuch"),
         City(name="Ankleshwar", location=LocationPoint(latitude=21.6279, longitude=72.9831), 
               population=75000, district="Bharuch")
+    ]
+
+# REAL GUJARAT PIPELINE INFRASTRUCTURE
+def get_pipeline_infrastructure():
+    """Gujarat's existing and planned pipeline network"""
+    return [
+        # EXISTING NATURAL GAS PIPELINES (Can be converted/parallel H2)
+        Pipeline(
+            name="Hazira-Vijaipur-Jagdishpur Pipeline (HVJ)",
+            type=PipelineType.NATURAL_GAS,
+            status=PipelineStatus.OPERATIONAL,
+            route_points=[
+                LocationPoint(latitude=21.1167, longitude=72.6167),  # Hazira
+                LocationPoint(latitude=21.7051, longitude=72.9959),  # Bharuch
+                LocationPoint(latitude=22.3039, longitude=73.1812),  # Vadodara
+                LocationPoint(latitude=23.0225, longitude=72.5714),  # Ahmedabad
+                LocationPoint(latitude=23.8103, longitude=72.4194),  # Mehsana
+            ],
+            diameter_inches=36,
+            length_km=450,
+            capacity_mmscfd=280,
+            pressure_bar=84,
+            operator="GAIL India Limited",
+            commissioned_date=datetime(1987, 8, 15),
+            investment_cost_cr=1200
+        ),
+        Pipeline(
+            name="Dahej-Uran Pipeline",
+            type=PipelineType.NATURAL_GAS,
+            status=PipelineStatus.OPERATIONAL,
+            route_points=[
+                LocationPoint(latitude=21.7000, longitude=72.5667),  # Dahej
+                LocationPoint(latitude=21.1167, longitude=72.6167),  # Hazira
+                LocationPoint(latitude=20.9463, longitude=72.9512),  # Navsari
+                LocationPoint(latitude=19.0760, longitude=72.8777),  # Mumbai (Uran)
+            ],
+            diameter_inches=42,
+            length_km=380,
+            capacity_mmscfd=350,
+            pressure_bar=90,
+            operator="GAIL India Limited",
+            commissioned_date=datetime(2005, 3, 20),
+            investment_cost_cr=1800
+        ),
+        Pipeline(
+            name="Kochi-Koottanad-Bangalore-Mangalore Pipeline (KKBM)",
+            type=PipelineType.NATURAL_GAS,
+            status=PipelineStatus.OPERATIONAL,
+            route_points=[
+                LocationPoint(latitude=21.7000, longitude=72.5667),  # Dahej (Extension)
+                LocationPoint(latitude=20.9463, longitude=72.9512),  # Navsari
+                LocationPoint(latitude=15.3173, longitude=75.7139),  # Extension to South
+            ],
+            diameter_inches=30,
+            length_km=1200,
+            capacity_mmscfd=180,
+            pressure_bar=70,
+            operator="GAIL India Limited",
+            commissioned_date=datetime(2013, 11, 10),
+            investment_cost_cr=2200
+        ),
+        
+        # PLANNED HYDROGEN PIPELINES (Green Hydrogen Mission)
+        Pipeline(
+            name="Gujarat Green Hydrogen Corridor Phase 1",
+            type=PipelineType.PLANNED_HYDROGEN,
+            status=PipelineStatus.PLANNED,
+            route_points=[
+                LocationPoint(latitude=22.2500, longitude=72.1800),  # Dholera Solar Park
+                LocationPoint(latitude=21.7000, longitude=72.5667),  # Dahej Industrial Zone
+                LocationPoint(latitude=21.1167, longitude=72.6167),  # Hazira Port
+                LocationPoint(latitude=22.8394, longitude=69.7219),  # Mundra Port
+            ],
+            diameter_inches=24,
+            length_km=320,
+            capacity_mmscfd=50,  # H2 equivalent
+            pressure_bar=150,  # Higher pressure for H2
+            operator="Gujarat State Petroleum Corporation",
+            planned_completion=datetime(2028, 12, 31),
+            investment_cost_cr=2800
+        ),
+        Pipeline(
+            name="Kutch Hydrogen Export Pipeline",
+            type=PipelineType.PLANNED_HYDROGEN,
+            status=PipelineStatus.UNDER_CONSTRUCTION,
+            route_points=[
+                LocationPoint(latitude=23.2967, longitude=71.1723),  # Charanka Solar Park
+                LocationPoint(latitude=23.0225, longitude=70.2667),  # Kandla Port
+                LocationPoint(latitude=22.8394, longitude=69.7219),  # Mundra Port
+            ],
+            diameter_inches=20,
+            length_km=180,
+            capacity_mmscfd=35,
+            pressure_bar=140,
+            operator="Adani Green Energy - H2 Division",
+            planned_completion=datetime(2027, 6, 30),
+            investment_cost_cr=1600
+        ),
+        
+        # EXISTING PRODUCT PIPELINES (Industrial Feedstock)
+        Pipeline(
+            name="Koyali-Mathura Product Pipeline",
+            type=PipelineType.PRODUCT,
+            status=PipelineStatus.OPERATIONAL,
+            route_points=[
+                LocationPoint(latitude=22.3039, longitude=73.1812),  # Vadodara (Koyali)
+                LocationPoint(latitude=23.0225, longitude=72.5714),  # Ahmedabad
+                LocationPoint(latitude=27.4924, longitude=77.6737),  # Mathura (Extension)
+            ],
+            diameter_inches=18,
+            length_km=680,
+            capacity_mmscfd=40,
+            pressure_bar=55,
+            operator="Indian Oil Corporation Limited",
+            commissioned_date=datetime(1998, 5, 15),
+            investment_cost_cr=950
+        )
+    ]
+
+# STORAGE FACILITIES
+def get_storage_facilities():
+    """Gujarat's hydrogen storage infrastructure"""
+    return [
+        # EXISTING LARGE-SCALE STORAGE (Convertible to H2)
+        StorageFacility(
+            name="Hazira Gas Storage Terminal",
+            type=StorageType.ABOVE_GROUND_TANK,
+            location=LocationPoint(latitude=21.1167, longitude=72.6167),
+            capacity_kg=5000000,  # 5 million kg equivalent
+            working_pressure_bar=16,
+            storage_medium="Natural Gas (H2 convertible)",
+            operator="Gujarat Gas Company Limited",
+            commissioned_date=datetime(2010, 8, 20),
+            safety_zone_radius_m=800
+        ),
+        StorageFacility(
+            name="Dahej LNG Terminal Storage",
+            type=StorageType.UNDERGROUND_LINED,
+            location=LocationPoint(latitude=21.7000, longitude=72.5667),
+            capacity_kg=8000000,  # 8 million kg equivalent
+            working_pressure_bar=20,
+            storage_medium="LNG (Future H2 conversion)",
+            operator="Petronet LNG Limited",
+            commissioned_date=datetime(2004, 4, 10),
+            safety_zone_radius_m=1000
+        ),
+        
+        # PLANNED HYDROGEN STORAGE (Green H2 Mission)
+        StorageFacility(
+            name="Dholera Hydrogen Storage Complex",
+            type=StorageType.UNDERGROUND_CAVERN,
+            location=LocationPoint(latitude=22.2500, longitude=72.1800),
+            capacity_kg=12000000,  # 12 million kg
+            working_pressure_bar=200,
+            storage_medium="Compressed Hydrogen",
+            operator="Dholera Industrial City Development Ltd",
+            safety_zone_radius_m=1200
+        ),
+        StorageFacility(
+            name="Mundra Hydrogen Export Terminal",
+            type=StorageType.LIQUID_HYDROGEN,
+            location=LocationPoint(latitude=22.8394, longitude=69.7219),
+            capacity_kg=3000000,  # 3 million kg liquid H2
+            working_pressure_bar=1.5,  # Liquid storage
+            storage_medium="Liquid Hydrogen",
+            operator="Adani Ports & SEZ Limited",
+            safety_zone_radius_m=1500
+        ),
+        StorageFacility(
+            name="Kandla Port Hydrogen Hub",
+            type=StorageType.COMPRESSED_GAS,
+            location=LocationPoint(latitude=23.0225, longitude=70.2667),
+            capacity_kg=2000000,  # 2 million kg
+            working_pressure_bar=180,
+            storage_medium="Compressed Hydrogen",
+            operator="Kandla Port Trust",
+            safety_zone_radius_m=900
+        )
+    ]
+
+# DISTRIBUTION HUBS
+def get_distribution_hubs():
+    """Gujarat's hydrogen distribution network"""
+    return [
+        # MAJOR PORTS (Export/Import)
+        DistributionHub(
+            name="Mundra Port Hydrogen Terminal",
+            type=DistributionType.MARINE_TERMINAL,
+            location=LocationPoint(latitude=22.8394, longitude=69.7219),
+            daily_capacity_kg=500000,  # 500 tonnes/day
+            storage_capacity_kg=3000000,
+            operator="Adani Ports & SEZ Limited",
+            served_industries=["Export", "Steel", "Refinery"],
+            transport_modes=["Ship", "Pipeline", "Truck"],
+            commissioned_date=datetime(2026, 12, 31)
+        ),
+        DistributionHub(
+            name="Kandla Port Hydrogen Hub",
+            type=DistributionType.MARINE_TERMINAL,
+            location=LocationPoint(latitude=23.0225, longitude=70.2667),
+            daily_capacity_kg=300000,  # 300 tonnes/day
+            storage_capacity_kg=2000000,
+            operator="Kandla Port Trust",
+            served_industries=["Export", "Fertilizer", "Chemical"],
+            transport_modes=["Ship", "Pipeline", "Truck"],
+            commissioned_date=datetime(2027, 6, 30)
+        ),
+        
+        # INDUSTRIAL HUBS
+        DistributionHub(
+            name="Hazira Industrial Hub",
+            type=DistributionType.TRUCK_LOADING,
+            location=LocationPoint(latitude=21.1167, longitude=72.6167),
+            daily_capacity_kg=200000,  # 200 tonnes/day
+            storage_capacity_kg=1000000,
+            operator="Gujarat Industrial Development Corporation",
+            served_industries=["Chemical", "Petrochemical", "Steel"],
+            transport_modes=["Truck", "Pipeline"],
+            commissioned_date=datetime(2025, 12, 31)
+        ),
+        DistributionHub(
+            name="Ankleshwar Chemical Hub",
+            type=DistributionType.TRUCK_LOADING,
+            location=LocationPoint(latitude=21.6279, longitude=72.9831),
+            daily_capacity_kg=150000,  # 150 tonnes/day
+            storage_capacity_kg=750000,
+            operator="Gujarat State Petrochemicals Corporation",
+            served_industries=["Chemical", "Pharmaceutical", "Fertilizer"],
+            transport_modes=["Truck", "Rail"],
+            commissioned_date=datetime(2026, 3, 31)
+        ),
+        
+        # MOBILITY HUBS (Transport)
+        DistributionHub(
+            name="Ahmedabad Transport Hub",
+            type=DistributionType.DISPENSING_STATION,
+            location=LocationPoint(latitude=23.0225, longitude=72.5714),
+            daily_capacity_kg=50000,  # 50 tonnes/day
+            storage_capacity_kg=200000,
+            operator="Gujarat Gas Company Limited",
+            served_industries=["Public Transport", "Commercial Vehicles"],
+            transport_modes=["Dispensing", "Mobile Refueling"],
+            commissioned_date=datetime(2026, 8, 15)
+        ),
+        DistributionHub(
+            name="Surat Industrial Dispensing",
+            type=DistributionType.DISPENSING_STATION,
+            location=LocationPoint(latitude=21.1702, longitude=72.8311),
+            daily_capacity_kg=75000,  # 75 tonnes/day
+            storage_capacity_kg=300000,
+            operator="Surat Municipal Corporation",
+            served_industries=["Textile", "Diamond", "Commercial Transport"],
+            transport_modes=["Dispensing", "Truck Loading"],
+            commissioned_date=datetime(2027, 1, 31)
+        ),
+        
+        # RAIL LOADING TERMINALS
+        DistributionHub(
+            name="Mehsana Rail Loading Terminal",
+            type=DistributionType.RAIL_LOADING,
+            location=LocationPoint(latitude=23.5880, longitude=72.3693),
+            daily_capacity_kg=100000,  # 100 tonnes/day
+            storage_capacity_kg=500000,
+            operator="Indian Railways - Hydrogen Division",
+            served_industries=["Inter-state Transport", "Industrial Supply"],
+            transport_modes=["Rail", "Truck"],
+            commissioned_date=datetime(2028, 6, 30)
+        )
     ]
