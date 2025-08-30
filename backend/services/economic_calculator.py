@@ -50,53 +50,67 @@ class EnhancedEconomicCalculator:
         self.plant_efficiency = 0.65  # 65% efficiency
         self.annual_operating_days = 330  # 90% uptime
         
-    def calculate_comprehensive_economics(self, 
-                                        location: LocationPoint,
-                                        energy_source: EnergySource,
-                                        demand_center: DemandCenter,
-                                        water_source: WaterSource,
-                                        plant_capacity_kg_day: int = 1000) -> EconomicAnalysis:
+    def calculate_comprehensive_economics(
+        self,
+        location: LocationPoint,
+        energy_source: EnergySource,
+        demand_center: DemandCenter,
+        water_source: WaterSource,
+        plant_capacity_kg_day: int = 1000,
+        discount_rate: float = 0.12,
+        horizon_years: int = 10,
+    ) -> EconomicAnalysis:
         """Calculate complete economic analysis for a hydrogen plant"""
-        
+
         # === CAPITAL COSTS ===
-        capex = self._calculate_capital_costs(location, energy_source, water_source, plant_capacity_kg_day)
-        
+        capex = self._calculate_capital_costs(
+            location, energy_source, water_source, plant_capacity_kg_day
+        )
+
         # === OPERATING COSTS ===
-        opex = self._calculate_operating_costs(location, energy_source, demand_center, water_source, plant_capacity_kg_day)
-        
+        opex = self._calculate_operating_costs(
+            location, energy_source, demand_center, water_source, plant_capacity_kg_day
+        )
+
         # === REVENUE CALCULATION ===
         revenue = self._calculate_revenue(demand_center, plant_capacity_kg_day)
-        
+
         # === FINANCIAL METRICS ===
-        financial_metrics = self._calculate_financial_metrics(capex, opex, revenue)
-        
+        financial_metrics = self._calculate_financial_metrics(
+            capex,
+            opex,
+            revenue,
+            discount_rate=discount_rate,
+            horizon_years=horizon_years,
+        )
+
         return EconomicAnalysis(
             # CAPEX
-            plant_construction_cost=capex['construction'],
-            electrolyzer_cost=capex['electrolyzer'],
-            infrastructure_cost=capex['infrastructure'],
-            land_acquisition_cost=capex['land'],
-            total_capex=capex['total'],
-            
+            plant_construction_cost=capex["construction"],
+            electrolyzer_cost=capex["electrolyzer"],
+            infrastructure_cost=capex["infrastructure"],
+            land_acquisition_cost=capex["land"],
+            total_capex=capex["total"],
+
             # OPEX
-            electricity_cost_annual=opex['electricity'],
-            water_cost_annual=opex['water'],
-            labor_cost_annual=opex['labor'],
-            maintenance_cost_annual=opex['maintenance'],
-            transportation_cost_annual=opex['transportation'],
-            total_opex_annual=opex['total'],
-            
+            electricity_cost_annual=opex["electricity"],
+            water_cost_annual=opex["water"],
+            labor_cost_annual=opex["labor"],
+            maintenance_cost_annual=opex["maintenance"],
+            transportation_cost_annual=opex["transportation"],
+            total_opex_annual=opex["total"],
+
             # Revenue
             hydrogen_production_kg_day=plant_capacity_kg_day,
-            hydrogen_selling_price_per_kg=revenue['price_per_kg'],
-            annual_revenue=revenue['annual'],
-            
+            hydrogen_selling_price_per_kg=revenue["price_per_kg"],
+            annual_revenue=revenue["annual"],
+
             # Financial metrics
-            annual_profit=financial_metrics['annual_profit'],
-            roi_percentage=financial_metrics['roi'],
-            payback_period_years=financial_metrics['payback'],
-            npv_10_years=financial_metrics['npv'],
-            irr_percentage=financial_metrics['irr']
+            annual_profit=financial_metrics["annual_profit"],
+            roi_percentage=financial_metrics["roi"],
+            payback_period_years=financial_metrics["payback"],
+            npv_10_years=financial_metrics["npv"],
+            irr_percentage=financial_metrics["irr"],
         )
     
     def _calculate_capital_costs(self, location: LocationPoint, energy_source: EnergySource, 
@@ -141,57 +155,87 @@ class EnhancedEconomicCalculator:
             'total': total_capex
         }
     
-    def _calculate_operating_costs(self, location: LocationPoint, energy_source: EnergySource,
-                                 demand_center: DemandCenter, water_source: WaterSource,
-                                 capacity_kg_day: int) -> Dict:
+    def _calculate_operating_costs(
+        self,
+        location: LocationPoint,
+        energy_source: EnergySource,
+        demand_center: DemandCenter,
+        water_source: WaterSource,
+        capacity_kg_day: int,
+    ) -> Dict:
         """Calculate annual operating costs"""
-        
+
         annual_production_kg = capacity_kg_day * self.annual_operating_days
-        
+
         # 1. Electricity Cost
-        annual_electricity_kwh = annual_production_kg * self.electricity_requirement_kwh_per_kg_h2
-        
+        annual_electricity_kwh = (
+            annual_production_kg * self.electricity_requirement_kwh_per_kg_h2
+        )
+
         # Dynamic electricity pricing based on source type and distance
         base_electricity_cost = energy_source.cost_per_kwh
-        distance_penalty = self._calculate_distance(location, energy_source.location) * 0.1  # ₹0.1 per km
+        distance_penalty = (
+            self._calculate_distance(location, energy_source.location) * 0.1
+        )  # ₹0.1 per km
         electricity_cost_per_kwh = base_electricity_cost + distance_penalty
-        
+
         electricity_cost_annual = annual_electricity_kwh * electricity_cost_per_kwh
-        
+
         # 2. Water Cost
-        annual_water_liters = annual_production_kg * self.water_requirement_liters_per_kg_h2
-        water_cost_per_liter = getattr(water_source, 'extraction_cost', 0.5)  # Default ₹0.5/L
+        annual_water_liters = (
+            annual_production_kg * self.water_requirement_liters_per_kg_h2
+        )
+        water_cost_per_liter = getattr(
+            water_source, "extraction_cost", 0.5
+        )  # Default ₹0.5/L
         water_distance = self._calculate_distance(location, water_source.location)
-        
+
         # Add transportation cost for water if distance > 2km
         if water_distance > 2:
             water_transport_cost = water_distance * 0.2  # ₹0.2 per L per km
             water_cost_per_liter += water_transport_cost
-        
-        water_cost_annual = annual_water_liters * water_cost_per_liter
-        
+
+        # Water capacity constraint: if daily capacity insufficient, add tanker penalty for shortfall
+        required_liters_per_day = (
+            capacity_kg_day * self.water_requirement_liters_per_kg_h2
+        )
+        available_liters_per_day = getattr(water_source, "capacity_liters_day", 0)
+        shortfall_liters_per_day = max(
+            0.0, required_liters_per_day - available_liters_per_day
+        )
+
+        tanker_penalty_per_liter = 1.0  # ₹ per liter for alternative sourcing
+        water_cost_annual = (
+            annual_water_liters * water_cost_per_liter
+            + shortfall_liters_per_day * tanker_penalty_per_liter * self.annual_operating_days
+        )
+
         # 3. Labor Cost
         # Base staff: 1 operator per 500 kg/day + supervisors + maintenance
         operators_needed = max(2, math.ceil(capacity_kg_day / 500))
         supervisors_needed = max(1, math.ceil(operators_needed / 3))
         maintenance_staff = max(1, math.ceil(capacity_kg_day / 1000))
-        
+
         # Salary costs (annual)
         operator_salary = 6_00_000  # ₹6 lakhs/year
         supervisor_salary = 12_00_000  # ₹12 lakhs/year
         maintenance_salary = 8_00_000  # ₹8 lakhs/year
-        
-        labor_cost_annual = (operators_needed * operator_salary + 
-                           supervisors_needed * supervisor_salary + 
-                           maintenance_staff * maintenance_salary)
-        
+
+        labor_cost_annual = (
+            operators_needed * operator_salary
+            + supervisors_needed * supervisor_salary
+            + maintenance_staff * maintenance_salary
+        )
+
         # 4. Maintenance Cost (3% of CAPEX annually)
-        capex = self._calculate_capital_costs(location, energy_source, water_source, capacity_kg_day)
-        maintenance_cost_annual = capex['total'] * 0.03
-        
+        capex = self._calculate_capital_costs(
+            location, energy_source, water_source, capacity_kg_day
+        )
+        maintenance_cost_annual = capex["total"] * 0.03
+
         # 5. Transportation Cost (for hydrogen delivery)
         demand_distance = self._calculate_distance(location, demand_center.location)
-        
+
         # Cost depends on transport method
         if demand_distance <= 50:
             # Truck transport: ₹2 per kg per km
@@ -199,82 +243,101 @@ class EnhancedEconomicCalculator:
         else:
             # Pipeline transport: ₹0.5 per kg per km (if pipeline exists)
             transport_cost_per_kg = demand_distance * 0.5
-        
+
         transportation_cost_annual = annual_production_kg * transport_cost_per_kg
-        
+
         # Total OPEX
-        total_opex = (electricity_cost_annual + water_cost_annual + labor_cost_annual + 
-                     maintenance_cost_annual + transportation_cost_annual)
-        
+        total_opex = (
+            electricity_cost_annual
+            + water_cost_annual
+            + labor_cost_annual
+            + maintenance_cost_annual
+            + transportation_cost_annual
+        )
+
         return {
-            'electricity': electricity_cost_annual,
-            'water': water_cost_annual,
-            'labor': labor_cost_annual,
-            'maintenance': maintenance_cost_annual,
-            'transportation': transportation_cost_annual,
-            'total': total_opex
+            "electricity": electricity_cost_annual,
+            "water": water_cost_annual,
+            "labor": labor_cost_annual,
+            "maintenance": maintenance_cost_annual,
+            "transportation": transportation_cost_annual,
+            "total": total_opex,
         }
     
     def _calculate_revenue(self, demand_center: DemandCenter, capacity_kg_day: int) -> Dict:
         """Calculate annual revenue"""
-        
+
         annual_production_kg = capacity_kg_day * self.annual_operating_days
-        
+
         # Dynamic pricing based on demand center characteristics
         base_price = 300  # ₹300 per kg base price for green hydrogen
-        
+
         # Price premium based on willingness to pay
         willingness_premium = demand_center.willingness_to_pay / 100  # Convert percentage to multiplier
         price_with_premium = base_price * (1 + willingness_premium)
-        
+
         # Market demand adjustment
-        demand_ratio = min(1.0, annual_production_kg / demand_center.hydrogen_demand_mt_year / 1000)
-        
+        demand_capacity_kg_year = max(
+            1.0, demand_center.hydrogen_demand_mt_year * 1000
+        )  # convert MT->kg, avoid div by zero
+        demand_ratio = min(1.0, annual_production_kg / demand_capacity_kg_year)
+
         # If we can satisfy <50% of demand, we get premium pricing
         if demand_ratio < 0.5:
             market_premium = 1.1  # 10% premium
         elif demand_ratio < 0.8:
-            market_premium = 1.05  # 5% premium  
+            market_premium = 1.05  # 5% premium
         else:
-            market_premium = 1.0   # Market price
-        
+            market_premium = 1.0  # Market price
+
         final_price_per_kg = price_with_premium * market_premium
-        annual_revenue = annual_production_kg * final_price_per_kg
-        
+        # Cap sold quantity by demand capacity
+        sold_kg = min(annual_production_kg, demand_capacity_kg_year)
+        annual_revenue = sold_kg * final_price_per_kg
+
         return {
-            'price_per_kg': final_price_per_kg,
-            'annual': annual_revenue,
-            'daily': annual_revenue / 365
+            "price_per_kg": final_price_per_kg,
+            "annual": annual_revenue,
+            "daily": annual_revenue / 365,
         }
     
-    def _calculate_financial_metrics(self, capex: Dict, opex: Dict, revenue: Dict) -> Dict:
+    def _calculate_financial_metrics(
+        self,
+        capex: Dict,
+        opex: Dict,
+        revenue: Dict,
+        *,
+        discount_rate: float = 0.12,
+        horizon_years: int = 10,
+    ) -> Dict:
         """Calculate ROI, payback, NPV, and IRR"""
-        
-        annual_profit = revenue['annual'] - opex['total']
-        roi_percentage = (annual_profit / capex['total']) * 100
-        
+
+        annual_profit = revenue["annual"] - opex["total"]
+        roi_percentage = (annual_profit / capex["total"]) * 100
+
         # Payback period
         if annual_profit > 0:
-            payback_years = capex['total'] / annual_profit
+            payback_years = capex["total"] / annual_profit
         else:
-            payback_years = float('inf')
-        
-        # NPV calculation (10 years, 12% discount rate)
-        discount_rate = 0.12
-        npv = -capex['total']  # Initial investment
-        
-        for year in range(1, 11):
+            payback_years = float("inf")
+
+        # NPV calculation (parameterized horizon/discount rate)
+        npv = -capex["total"]  # Initial investment
+
+        for year in range(1, max(1, int(horizon_years)) + 1):
             npv += annual_profit / ((1 + discount_rate) ** year)
-        
+
         # IRR calculation (simplified)
-        irr = self._calculate_irr(capex['total'], annual_profit, 10)
-        
+        irr = self._calculate_irr(
+            capex["total"], annual_profit, max(1, int(horizon_years))
+        )
+
         return {
-            'annual_profit': annual_profit,
-            'roi': roi_percentage,
-            'payback': payback_years,
-            'npv': npv,
-            'irr': irr
+            "annual_profit": annual_profit,
+            "roi": roi_percentage,
+            "payback": payback_years,
+            "npv": npv,
+            "irr": irr,
         }
     
     def _calculate_distance(self, point1: LocationPoint, point2: LocationPoint) -> float:

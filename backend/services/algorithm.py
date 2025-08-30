@@ -177,7 +177,8 @@ class HydrogenLocationOptimizer:
     async def calculate_economic_viability_score(self, location: LocationPoint,
                                                nearest_energy: EnergySource = None,
                                                nearest_demand: DemandCenter = None,
-                                               nearest_water: WaterSource = None) -> Tuple[float, dict]:
+                                               nearest_water: WaterSource = None,
+                                               *, discount_rate: float = 0.12, horizon_years: int = 10) -> Tuple[float, dict]:
         """Calculate economic viability score based on financial metrics"""
         
         if not (nearest_energy and nearest_demand and nearest_water):
@@ -187,7 +188,7 @@ class HydrogenLocationOptimizer:
         try:
             # Calculate economics for optimal plant size (1000 kg/day)
             analysis = self.economic_calculator.calculate_comprehensive_economics(
-                location, nearest_energy, nearest_demand, nearest_water, 1000
+                location, nearest_energy, nearest_demand, nearest_water, 1000, discount_rate=discount_rate, horizon_years=horizon_years
             )
             
             # Economic scoring factors (0-100 each)
@@ -291,6 +292,8 @@ class HydrogenLocationOptimizer:
                 'cost_score': cost_score,
                 'npv_10_years_crores': analysis.npv_10_years / 1_00_00_000,
                 'npv_score': npv_score,
+                'discount_rate': discount_rate,
+                'horizon_years': horizon_years,
                 'profit_margin_percentage': profit_margin,
                 'margin_score': margin_score,
                 'overall_economic_score': economic_score,
@@ -323,7 +326,8 @@ class HydrogenLocationOptimizer:
                                          location: LocationPoint,
                                          nearest_energy: EnergySource = None,
                                          nearest_demand: DemandCenter = None,
-                                         nearest_water: WaterSource = None) -> dict:
+                                         nearest_water: WaterSource = None,
+                                         *, discount_rate: float = 0.12, horizon_years: int = 10) -> dict:
         """Calculate detailed production cost and capacity with economic analysis"""
         
         # If we have actual infrastructure data, use detailed economic calculation
@@ -335,7 +339,7 @@ class HydrogenLocationOptimizer:
                 
                 for capacity in capacities:
                     analysis = self.economic_calculator.calculate_comprehensive_economics(
-                        location, nearest_energy, nearest_demand, nearest_water, capacity
+                        location, nearest_energy, nearest_demand, nearest_water, capacity, discount_rate=discount_rate, horizon_years=horizon_years
                     )
                     
                     economic_analyses[f"{capacity}_kg_day"] = {
@@ -350,6 +354,8 @@ class HydrogenLocationOptimizer:
                         'payback_period_years': analysis.payback_period_years,
                         'npv_10_years_crores': analysis.npv_10_years / 1_00_00_000,
                         'irr_percentage': analysis.irr_percentage,
+                        'discount_rate': discount_rate,
+                        'horizon_years': horizon_years,
                         
                         # Cost breakdown
                         'cost_breakdown': {
@@ -432,12 +438,24 @@ class HydrogenLocationOptimizer:
         pipeline_score, pipeline_info = await self.calculate_pipeline_score(location, gas_pipelines)
         transport_score, transport_info = await self.calculate_transport_score(location, road_networks)
         
-        # Calculate economic viability score
+        # Determine nearest real assets to the requested location
+        nearest_energy_asset = None
+        nearest_demand_asset = None
+        nearest_water_asset = None
+
+        if energy_sources:
+            nearest_energy_asset, _ = await self.get_nearest_asset(location, energy_sources)
+        if demand_centers:
+            nearest_demand_asset, _ = await self.get_nearest_asset(location, demand_centers)
+        if water_sources:
+            nearest_water_asset, _ = await self.get_nearest_asset(location, water_sources)
+
+        # Calculate economic viability score using nearest assets
         economic_score, economic_info = await self.calculate_economic_viability_score(
             location,
-            energy_sources[0] if energy_sources else None,
-            demand_centers[0] if demand_centers else None,
-            water_sources[0] if water_sources else None
+            nearest_energy_asset,
+            nearest_demand_asset,
+            nearest_water_asset
         )
         
         # Enhanced weighted overall score (now includes economic viability)
@@ -455,9 +473,9 @@ class HydrogenLocationOptimizer:
         # Production metrics with economic analysis
         production_metrics = await self.calculate_production_metrics(
             overall_score, energy_info, demand_info, location,
-            energy_sources[0] if energy_sources else None,
-            demand_centers[0] if demand_centers else None, 
-            water_sources[0] if water_sources else None
+            nearest_energy_asset,
+            nearest_demand_asset,
+            nearest_water_asset
         )
         
         # Determine overall grade based on final score

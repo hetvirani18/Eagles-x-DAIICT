@@ -328,6 +328,21 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
                   {productionMetrics.roi_percentage || 0}%
                 </p>
               </div>
+
+              {typeof productionMetrics.npv_10_years_crores !== 'undefined' && (
+                <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 col-span-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <BarChart3 className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-medium text-emerald-800">NPV (10y @12%)</span>
+                  </div>
+                  <p className="text-lg font-bold text-emerald-900">
+                    ₹{productionMetrics.npv_10_years_crores?.toFixed?.(1) || productionMetrics.npv_10_years_crores} Cr
+                  </p>
+                  {productionMetrics.irr_percentage && (
+                    <p className="text-xs text-emerald-700 mt-1">IRR: {productionMetrics.irr_percentage.toFixed?.(1) || productionMetrics.irr_percentage}%</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Detailed Economics (if available) */}
@@ -445,6 +460,13 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Assumptions */}
+                {productionMetrics.discount_rate && (
+                  <div className="p-2 text-[11px] text-gray-600 bg-white rounded border border-gray-200">
+                    Assumptions: NPV computed over {productionMetrics.horizon_years || 10} years at {Math.round(productionMetrics.discount_rate * 100)}% discount rate.
+                  </div>
+                )}
               </div>
             )}
           </div>
