@@ -167,12 +167,49 @@ async def get_cities(q: Optional[str] = Query(None, description="Search query fo
 # Algorithm endpoints
 @api_router.post("/analyze-location")
 async def analyze_location(location: LocationPoint, weights: Optional[WeightedAnalysisRequest] = None):
-    """Analyze a specific location for hydrogen plant suitability"""
+    """Analyze a specific location for hydrogen plant suitability (OPTIMIZED)"""
+    import time
+    start_time = time.time()
+    
     try:
-        analysis = await optimizer.analyze_location(location, weights)
+        # Use optimized single location analysis for better performance
+        analysis = await optimizer.analyze_single_location_optimized(location, weights)
+        
+        execution_time = round(time.time() - start_time, 3)
+        analysis['performance_metrics'] = {
+            'execution_time_seconds': execution_time,
+            'optimization_level': 'high',
+            'query_type': 'single_location_optimized'
+        }
+        
+        logging.info(f"✅ Optimized location analysis completed in {execution_time}s")
         return analysis
+        
     except Exception as e:
         logging.error(f"Location analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@api_router.post("/analyze-location-detailed")  
+async def analyze_location_detailed(location: LocationPoint, weights: Optional[WeightedAnalysisRequest] = None):
+    """Analyze location with full dataset (use only when detailed analysis needed)"""
+    import time
+    start_time = time.time()
+    
+    try:
+        analysis = await optimizer.analyze_location(location, weights)
+        
+        execution_time = round(time.time() - start_time, 3)
+        analysis['performance_metrics'] = {
+            'execution_time_seconds': execution_time,
+            'optimization_level': 'standard',
+            'query_type': 'full_dataset_analysis'
+        }
+        
+        logging.info(f"📊 Detailed location analysis completed in {execution_time}s")
+        return analysis
+        
+    except Exception as e:
+        logging.error(f"Detailed location analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @api_router.post("/calculate-optimal-locations")

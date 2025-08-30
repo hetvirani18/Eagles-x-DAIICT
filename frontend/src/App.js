@@ -3,27 +3,17 @@ import './App.css';
 import MapComponent from './components/MapComponent';
 import SearchComponent from './components/SearchComponent';
 import LocationDetails from './components/LocationDetails';
-import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
+import { Card, CardHeader, CardTitle } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { Separator } from './components/ui/separator';
 import { Badge } from './components/ui/badge';
-import { Layers, Info, Star, Zap, Factory, Droplets, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
-import { useApiData } from './hooks/useApiData';
+import { Layers, Info, Star, Zap, Factory, Droplets, Menu, X } from 'lucide-react';
 
 function App() {
   const [searchLocation, setSearchLocation] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
-  const [legendCollapsed, setLegendCollapsed] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Get data for search functionality
-  const { 
-    energySources, 
-    demandCenters, 
-    optimalLocations 
-  } = useApiData();
 
   const handleLocationSelect = (location, locationData, locationType) => {
     setSearchLocation(location);
@@ -44,60 +34,52 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-sm">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-16 relative">
-            {/* Logo and Title - Centered */}
-            <div className="flex items-center gap-3">
-              <div className="bg-primary p-2 rounded-lg">
-                <Droplets className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div className="text-center">
-                <h1 className="text-xl font-bold text-foreground">
-                  Green Hydrogen Infrastructure Mapping & Optimization
-                </h1>
-                <p className="text-sm text-muted-foreground hidden sm:block">
-                  Advanced Location Intelligence for H₂ Plant Development
-                </p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-coconut">
+      {/* Minimalist centered header */}
+      <header className="w-full py-8 bg-mocha">
+        <div className="relative">
+          <h1 className="text-center text-4xl font-bold text-coconut flex items-center justify-center gap-3 tracking-wide">
+            <Droplets className="w-9 h-9" />
+            Green Hydrogen Infrastructure Mapping
+            <Factory className="w-9 h-9" />
+          </h1>
+          <p className="text-center text-coconut/80 mt-2 text-lg font-medium">
+            Advanced Location Intelligence for H₂ Plant Development
+          </p>
+          
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden absolute top-0 right-4 text-coconut hover:bg-coconut/20"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
 
-            {/* Mobile Menu Button - Positioned absolutely on the right */}
+          {/* Desktop Actions */}
+          <div className="hidden lg:flex items-center gap-4 absolute top-0 right-4">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="lg:hidden absolute right-4"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => setShowInfo(!showInfo)}
+              className="flex items-center gap-2 text-coconut border-coconut hover:bg-coconut/20"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Info className="w-4 h-4" />
+              About
             </Button>
-
-            {/* Desktop Actions - Positioned absolutely on the right */}
-            <div className="hidden lg:flex items-center gap-4 absolute right-4 sm:right-6 lg:right-8">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowInfo(!showInfo)}
-                className="flex items-center gap-2"
-              >
-                <Info className="w-4 h-4" />
-                About
-              </Button>
-            </div>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-border bg-card">
+          <div className="lg:hidden border-t border-coconut/20 bg-mocha mt-4">
             <div className="px-4 py-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowInfo(!showInfo)}
-                className="flex items-center gap-2 w-full justify-start"
+                className="flex items-center gap-2 w-full justify-start text-coconut hover:bg-coconut/20"
               >
                 <Info className="w-4 h-4" />
                 About
@@ -107,316 +89,121 @@ function App() {
         )}
       </header>
 
-      {/* Info Panel */}
-      {showInfo && (
-        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-foreground">
-                    <Factory className="w-5 h-5 text-primary" />
-                    Application Features
-                  </h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Interactive Gujarat infrastructure map</li>
-                    <li>• AI-powered location optimization</li>
-                    <li>• Real-time data analysis</li>
-                    <li>• Cost projections and investment insights</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-foreground">
-                    <Star className="w-5 h-5 text-yellow-500" />
-                    How It Works
-                  </h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Search for Gujarat cities</li>
-                    <li>• Click optimal locations (⭐) for details</li>
-                    <li>• View proximity to energy sources and demand</li>
-                    <li>• Get investment-grade analysis</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className={`${
-          sidebarCollapsed ? 'w-16' : 'w-72'
-        } bg-card border-r border-border transition-all duration-300 ease-in-out hidden lg:flex flex-col`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-140px)]">
           
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between">
-              {!sidebarCollapsed && (
-                <h2 className="text-lg font-semibold text-foreground">Controls</h2>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1"
-              >
-                <Menu className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          {/* Left Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Search */}
+            <Card className="border-mocha bg-card">
+              <CardHeader className="pb-4 border-b border-mocha/20">
+                <CardTitle className="text-lg text-mocha">Search Location</CardTitle>
+              </CardHeader>
+              <div className="px-6 pb-6">
+                <SearchComponent 
+                  onLocationSelect={handleLocationSelect}
+                  onClear={clearSearch}
+                />
+              </div>
+            </Card>
 
-          {/* Sidebar Content */}
-          <div className="flex-1 overflow-y-auto">
-            {/* Search Section */}
-            <div className="p-4">
-              {!sidebarCollapsed ? (
-                <Card className="border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-primary" />
-                      Search Location
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <SearchComponent 
-                      onLocationSelect={handleLocationSelect}
-                      onClear={clearSearch}
-                      optimalLocations={optimalLocations}
-                      energySources={energySources}
-                      demandCenters={demandCenters}
-                    />
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSidebarCollapsed(false)}
-                    className="p-2"
-                  >
-                    <Layers className="w-5 h-5 text-primary" />
-                  </Button>
+            {/* Map Legend */}
+            <Card className="border-mocha bg-card">
+              <CardHeader className="pb-4 border-b border-mocha/20">
+                <CardTitle className="flex items-center gap-2 text-lg text-mocha">
+                  <Layers className="w-5 h-5" />
+                  Map Legend
+                </CardTitle>
+              </CardHeader>
+              <div className="px-6 pb-6 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-xs">⭐</div>
+                  <span className="text-sm text-mocha">Optimal Locations</span>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs">⚡</div>
+                  <span className="text-sm text-mocha">Energy Sources</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white text-xs">🏭</div>
+                  <span className="text-sm text-mocha">Industrial Demand</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">💧</div>
+                  <span className="text-sm text-mocha">Water Sources</span>
+                </div>
+              </div>
+            </Card>
 
-            {/* Legend Section */}
-            <div className="p-4">
-              {!sidebarCollapsed && (
-                <Card className="border-border">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Info className="w-4 h-4 text-primary" />
-                        Map Legend
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setLegendCollapsed(!legendCollapsed)}
-                        className="p-1"
-                      >
-                        {legendCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  {!legendCollapsed && (
-                    <CardContent className="pt-0 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-xs">⭐</div>
-                        <span className="text-sm text-foreground">Optimal Locations</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs">⚡</div>
-                        <span className="text-sm text-foreground">Energy Sources</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white text-xs">🏭</div>
-                        <span className="text-sm text-foreground">Industrial Demand</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">💧</div>
-                        <span className="text-sm text-foreground">Water Sources</span>
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              )}
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content - Dynamic Layout */}
-        {/*
-          Layout Logic:
-          - Desktop/Tablet: Map + Analysis Panel side by side
-          - Mobile: Map full width + Analysis panel slides up from bottom
-          - Map width adjusts dynamically when panel opens/closes
-          - Smooth transitions with CSS transitions
-
-          PANEL WIDTH IMPROVEMENTS (v2):
-          - Desktop (lg): 352px → Better text visibility
-          - Large Desktop (xl): 400px → Optimal content display
-          - Tablet (md): 320px → Maintained for responsive design
-          - Mobile: 55vh height → Increased from 50vh for better UX
-          - Map width adjusted proportionally to accommodate wider panel
-        */}
-        <main className="flex-1 flex min-w-0">
-          {/* Map Container - Dynamic Width */}
-          {/*
-            Responsive Width Logic:
-            - No panel: flex-1 (full width)
-            - With panel:
-              - md (tablet): 60% width (adjusted for wider panel)
-              - lg (desktop): 65% width (350px panel)
-              - xl (large desktop): 68% width (400px panel)
-            - Smooth transition when panel opens/closes
-            - Updated: Reduced map width to accommodate wider analysis panel
-          */}
-          <div className={`flex-1 relative transition-all duration-300 ease-in-out ${
-            selectedLocation ? 'md:flex-[0_0_60%] lg:flex-[0_0_65%] xl:flex-[0_0_68%]' : 'flex-1'
-          }`}>
-            <div className="h-full p-4">
-              <Card className="h-full border-border shadow-sm">
-                <CardContent className="p-0 h-full">
-                  <MapComponent
-                    searchLocation={searchLocation}
-                    selectedLocation={selectedLocation}
-                    onLocationSelect={handleOptimalLocationSelect}
-                  />
-                </CardContent>
+            {/* Info Panel */}
+            {showInfo && (
+              <Card className="border-mocha bg-card">
+                <CardHeader className="pb-4 border-b border-mocha/20">
+                  <CardTitle className="flex items-center gap-2 text-lg text-mocha">
+                    <Info className="w-5 h-5" />
+                    How H₂-Optimize Works
+                  </CardTitle>
+                </CardHeader>
+                <div className="px-6 pb-6 space-y-3 text-sm text-mocha/70">
+                  <div className="space-y-2">
+                    <p className="font-medium text-mocha">1. Smart Algorithm</p>
+                    <p>Uses weighted overlay analysis to score locations based on proximity to energy sources, industrial demand, and water availability.</p>
+                  </div>
+                  <Separator className="bg-mocha/20" />
+                  <div className="space-y-2">
+                    <p className="font-medium text-mocha">2. Click & Explore</p>
+                    <p>Click on any ⭐ optimal location to see detailed analysis including cost projections and infrastructure proximity.</p>
+                  </div>
+                  <Separator className="bg-mocha/20" />
+                  <div className="space-y-2">
+                    <p className="font-medium text-mocha">3. Data-Driven Decisions</p>
+                    <p>Get investment-grade insights for green hydrogen plant placement in Gujarat.</p>
+                  </div>
+                </div>
               </Card>
-            </div>
+            )}
           </div>
 
-          {/* Location Analysis Panel - Docked Right */}
-          {/*
-            Panel Behavior:
-            - Hidden on mobile (uses bottom sheet instead)
-            - Visible on md+ screens when location is selected
-            - Fixed width with responsive sizing
-            - Smooth slide-in animation
-            - Can be closed via X button
-            - Updated: Increased width for better content visibility
-              - md: 320px (w-80)
-              - lg: 352px (w-88) ~350px
-              - xl: 400px (w-[400px])
-          */}
-          {selectedLocation && (
-            <div className={`hidden md:block transition-all duration-300 ease-in-out border-l border-border bg-card shadow-lg ${
-              selectedLocation ? 'flex-shrink-0 w-80 md:w-80 lg:w-88 xl:w-[400px]' : 'hidden'
-            }`}>
-              <div className="h-full">
-                <Card className="h-full border-0 shadow-none">
-                  <CardHeader className="pb-3 border-b border-border">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Star className="w-5 h-5 text-yellow-500" />
-                        Location Analysis
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedLocation(null)}
-                        className="p-1 hover:bg-muted"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-3 h-[calc(100%-4rem)] overflow-y-auto">
-                    <LocationDetails
-                      location={selectedLocation}
-                      onClose={() => setSelectedLocation(null)}
-                      embedded={true}
-                    />
-                  </CardContent>
-                </Card>
+          {/* Map */}
+          <div className="lg:col-span-2">
+            <Card className="h-full border-mocha bg-card">
+              <div className="h-full p-6">
+                <MapComponent 
+                  searchLocation={searchLocation}
+                  selectedLocation={selectedLocation}
+                  onLocationSelect={handleOptimalLocationSelect}
+                />
               </div>
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Mobile Bottom Sheet for Legend & Analysis */}
-      <div className="lg:hidden">
-        {/* Mobile Legend */}
-        <div className="border-t border-border bg-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Info className="w-4 h-4 text-primary" />
-              Map Legend
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLegendCollapsed(!legendCollapsed)}
-              className="p-1"
-            >
-              {legendCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-            </Button>
+            </Card>
           </div>
-          {!legendCollapsed && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-xs">⭐</div>
-                <span className="text-sm text-foreground">Optimal</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white text-xs">⚡</div>
-                <span className="text-sm text-foreground">Energy</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white text-xs">🏭</div>
-                <span className="text-sm text-foreground">Demand</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">💧</div>
-                <span className="text-sm text-foreground">Water</span>
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Mobile Location Analysis */}
-        {/*
-          Mobile Panel Behavior:
-          - Slides up from bottom on mobile devices
-          - Max height of 55% viewport height (increased for better content visibility)
-          - Separate from desktop panel for better UX
-          - Scrollable content with proper overflow handling
-          - Updated: Increased height from 50vh to 55vh for better mobile experience
-        */}
-        {selectedLocation && (
-          <div className="md:hidden border-t border-border bg-card shadow-lg max-h-[55vh] overflow-hidden">
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  <Star className="w-4 h-4 text-yellow-500" />
-                  Location Analysis
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedLocation(null)}
-                  className="p-1 hover:bg-muted"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="max-h-[calc(55vh-4rem)] overflow-y-auto p-4">
-              <LocationDetails
+          {/* Right Sidebar - Location Details */}
+          <div className="lg:col-span-1">
+            {selectedLocation ? (
+              <LocationDetails 
                 location={selectedLocation}
                 onClose={() => setSelectedLocation(null)}
-                embedded={true}
               />
-            </div>
+            ) : (
+              <Card className="h-fit border-mocha bg-card">
+                <CardHeader className="border-b border-mocha/20">
+                  <CardTitle className="text-mocha">Location Analysis</CardTitle>
+                </CardHeader>
+                <div className="px-6 pb-6">
+                  <div className="text-center py-8 space-y-4">
+                    <div className="w-16 h-16 mx-auto bg-coconut border-2 border-mocha/20 rounded-full flex items-center justify-center">
+                      <Star className="w-8 h-8 text-mocha/40" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-medium text-mocha">Select an Optimal Location</p>
+                      <p className="text-sm text-mocha/70">Click on any ⭐ marker to view detailed analysis and investment recommendations</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -27,6 +27,10 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
     payback_period_years: location.payback_period_years || 8,
     roi_percentage: location.roi_percentage || 12
   };
+  
+  // Performance metrics from optimized algorithm
+  const performanceMetrics = location.performance_metrics;
+  const optimizationInfo = location.optimization_info;
 
   const coordinates = location.location 
     ? [location.location.latitude, location.location.longitude]
@@ -612,6 +616,47 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
             })()}
           </div>
         </div>
+
+        {/* Performance Metrics (if available) */}
+        {(performanceMetrics || optimizationInfo) && (
+          <>
+            <Separator className="bg-mocha/20" />
+            <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+              <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Analysis Performance
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {performanceMetrics?.execution_time_seconds && (
+                  <div>
+                    <p className="text-xs text-green-600 uppercase tracking-wide">Query Time</p>
+                    <p className="font-medium text-green-800">
+                      {performanceMetrics.execution_time_seconds}s
+                    </p>
+                  </div>
+                )}
+                {performanceMetrics?.optimization_level && (
+                  <div>
+                    <p className="text-xs text-green-600 uppercase tracking-wide">Optimization</p>
+                    <Badge variant="outline" className="border-green-300 text-green-700 capitalize">
+                      {performanceMetrics.optimization_level}
+                    </Badge>
+                  </div>
+                )}
+                {optimizationInfo?.assets_processed && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-green-600 uppercase tracking-wide mb-1">Assets Analyzed</p>
+                    <div className="text-xs text-green-700 grid grid-cols-3 gap-1">
+                      <span>Energy: {optimizationInfo.assets_processed.energy_sources}</span>
+                      <span>Demand: {optimizationInfo.assets_processed.demand_centers}</span>
+                      <span>Water: {optimizationInfo.assets_processed.water_sources + optimizationInfo.assets_processed.water_bodies}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </>
   );
