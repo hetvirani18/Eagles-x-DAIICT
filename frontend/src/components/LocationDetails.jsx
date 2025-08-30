@@ -28,8 +28,8 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
   const productionMetrics = location.production_metrics || {
     projected_cost_per_kg: location.projectedCost || 0,
     annual_capacity_mt: location.annualCapacity || 0,
-    payback_period_years: location.payback_period_years || 8,
-    roi_percentage: location.roi_percentage || 12
+    payback_period_years: location.payback_period_years || location.production_metrics?.payback_period_years || "N/A",
+    roi_percentage: location.roi_percentage || location.production_metrics?.roi_percentage || "N/A"
   };
 
   const coordinates = location.location 
@@ -96,50 +96,136 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
           <h3 className="font-semibold text-sm uppercase tracking-wide text-foreground">
             Production Potential
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-medium text-blue-800">Cost per kg</span>
-              </div>
-              <p className="text-lg font-bold text-blue-900">
-                ₹{productionMetrics.projected_cost_per_kg}
-              </p>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Factory className="w-4 h-4 text-green-600" />
-                <span className="text-xs font-medium text-green-800">Annual Capacity</span>
-              </div>
-              <p className="text-lg font-bold text-green-900">
-                {productionMetrics.annual_capacity_mt?.toLocaleString() || 'N/A'} MT
-              </p>
-            </div>
-          </div>
-          
-          {/* Additional Financial Metrics */}
-          {(productionMetrics.payback_period_years || productionMetrics.roi_percentage) && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="w-4 h-4 text-purple-600" />
-                  <span className="text-xs font-medium text-purple-800">Payback Period</span>
+          {(() => {
+            // Calculate dynamic investment for Production Potential section
+            const calculateDynamicInvestment = () => {
+              const baseScore = overallScore || 250;
+              const energyDistance = proximityData.energy?.distance_km || 50;
+              const demandDistance = proximityData.demand?.distance_km || 30;
+              const waterDistance = proximityData.water?.distance_km || 20;
+              
+              // Dynamic capacity based on location quality and proximity - scaled up for realistic economics
+              let capacity_kg_day = 15000; // Base capacity scaled up
+              if (baseScore > 280) capacity_kg_day = 80000;
+              else if (baseScore > 260) capacity_kg_day = 75000;
+              else if (baseScore > 240) capacity_kg_day = 60000;
+              else capacity_kg_day = 45000;
+              
+              // Adjust capacity based on proximity to demand
+              if (demandDistance < 10) capacity_kg_day *= 1.3;
+              else if (demandDistance > 50) capacity_kg_day *= 0.8;
+              
+              // Land cost varies by location (urban vs rural)
+              let landPricePerAcre = 1.4; // Slightly lower baseline land cost
+              if (energyDistance < 20) landPricePerAcre = 2.5; // Urban
+              else if (energyDistance < 40) landPricePerAcre = 1.8; // Semi-urban
+              
+              // Calculate land requirement (scales with capacity)
+              const landRequired = Math.max(5, capacity_kg_day / 200); // Min 5 acres
+              const landCost = landRequired * landPricePerAcre;
+              
+              // Equipment cost scales with capacity - reduced for better economics
+              const electrolyzerCost = (capacity_kg_day / 1000) * 25; // ₹25Cr per 1000kg/day
+              const powerElectronics = electrolyzerCost * 0.35;
+              const gasProcessing = electrolyzerCost * 0.65;
+              const compression = electrolyzerCost * 0.35;
+              const installation = electrolyzerCost * 0.20;
+              
+              // Infrastructure scales with capacity and location - reduced costs
+              const electricalSubstation = (capacity_kg_day / 1000) * 4;
+              const waterTreatment = (capacity_kg_day / 1000) * 3.5;
+              const buildings = (capacity_kg_day / 1000) * 4.5;
+              
+              // Permits cost more in urban areas
+              const permitsBase = (capacity_kg_day / 1000) * 10;
+              const permitsMultiplier = energyDistance < 30 ? 1.2 : 1.0;
+              const permitsCost = permitsBase * permitsMultiplier;
+              
+              // Working capital
+              const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
+              const infrastructureTotal = electricalSubstation + waterTreatment + buildings;
+              const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
+              const workingCapital = totalBeforeWC * 0.10;
+              
+              // Operating costs vary by location - more favorable rates for large scale
+              const electricityRate = energyDistance < 20 ? 2.8 : 2.5; // Better bulk rates
+              const annualElectricity = (capacity_kg_day * 365 * 0.85 * 55 * electricityRate) / 10_000_000;
+              const annualWater = (capacity_kg_day / 1000) * 0.5; // Reduced water costs
+              const staffCount = Math.max(25, capacity_kg_day / 2000); // Better staffing efficiency
+              const annualStaff = (staffCount / 25) * 3.5;
+              const annualMaintenance = totalBeforeWC * 0.015; // Lower maintenance
+              const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.10;
+              
+              // Revenue varies by market proximity - better pricing for large scale
+              const hydrogenPrice = demandDistance < 15 ? 420 : demandDistance < 30 ? 400 : 380;
+              const annualProduction = capacity_kg_day * 365 * 0.85;
+              const annualRevenue = (annualProduction * hydrogenPrice) / 10_000_000;
+              const totalOpex = annualElectricity + annualWater + annualStaff + annualMaintenance + annualOther;
+              const annualProfit = annualRevenue - totalOpex;
+              
+              // Financial metrics
+              const totalCapex = totalBeforeWC + workingCapital;
+              const roi = (annualProfit / totalCapex) * 100;
+              // Payback only makes sense with positive annual profit; otherwise it's effectively "never"
+              const payback = annualProfit > 0 ? (totalCapex / annualProfit) : Number.POSITIVE_INFINITY;
+              
+              return {
+                projected_cost_per_kg: Math.round(hydrogenPrice),
+                annual_capacity_mt: Math.round((annualProduction / 1000) * 10) / 10,
+                payback_period_years: Number.isFinite(payback) ? Math.round(payback * 10) / 10 : "Never",
+                roi_percentage: Math.round(roi * 10) / 10
+              };
+            };
+
+            const dynamicMetrics = calculateDynamicInvestment();
+
+            return (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSign className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-medium text-blue-800">Cost per kg</span>
+                    </div>
+                    <p className="text-lg font-bold text-blue-900">
+                      ₹{dynamicMetrics.projected_cost_per_kg}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Factory className="w-4 h-4 text-green-600" />
+                      <span className="text-xs font-medium text-green-800">Annual Capacity</span>
+                    </div>
+                    <p className="text-lg font-bold text-green-900">
+                      {dynamicMetrics.annual_capacity_mt?.toLocaleString() || 'N/A'} MT
+                    </p>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-purple-900">
-                  {productionMetrics.payback_period_years || 'N/A'} years
-                </p>
-              </div>
-              <div className="bg-orange-50 p-3 rounded-lg">
-                <div className="flex items-center gap-2 mb-1">
-                  <Percent className="w-4 h-4 text-orange-600" />
-                  <span className="text-xs font-medium text-orange-800">Expected ROI</span>
+                
+                {/* Additional Financial Metrics */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs font-medium text-purple-800">Payback Period</span>
+                    </div>
+                    <p className="text-lg font-bold text-purple-900">
+                      {dynamicMetrics.payback_period_years} years
+                    </p>
+                  </div>
+                  <div className="bg-orange-50 p-3 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Percent className="w-4 h-4 text-orange-600" />
+                      <span className="text-xs font-medium text-orange-800">Expected ROI</span>
+                    </div>
+                    <p className="text-lg font-bold text-orange-900">
+                      {dynamicMetrics.roi_percentage}%
+                    </p>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-orange-900">
-                  {productionMetrics.roi_percentage || 'N/A'}%
-                </p>
-              </div>
-            </div>
-          )}
+              </>
+            );
+          })()}
         </div>
 
         <Separator className="bg-mocha/20" />
@@ -258,94 +344,181 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
         <Separator className="bg-border" />
 
         {/* Enhanced Economic Analysis */}
-        {productionMetrics && (
-          <div className="space-y-4">
-            <h3 className="font-semibold text-mocha flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Economic Analysis
-            </h3>
+        {(() => {
+          // Calculate dynamic investment for Economic Analysis section
+          const calculateDynamicInvestment = () => {
+            const baseScore = overallScore || 250;
+            const energyDistance = proximityData.energy?.distance_km || 50;
+            const demandDistance = proximityData.demand?.distance_km || 30;
+            const waterDistance = proximityData.water?.distance_km || 20;
+            
+            // Dynamic capacity based on location quality and proximity - scaled up for realistic economics
+            let capacity_kg_day = 15000; // Base capacity scaled up
+            if (baseScore > 280) capacity_kg_day = 80000;
+            else if (baseScore > 260) capacity_kg_day = 75000;
+            else if (baseScore > 240) capacity_kg_day = 60000;
+            else capacity_kg_day = 45000;
+            
+            // Adjust capacity based on proximity to demand
+            if (demandDistance < 10) capacity_kg_day *= 1.3;
+            else if (demandDistance > 50) capacity_kg_day *= 0.8;
+            
+            // Land cost varies by location (urban vs rural)
+            let landPricePerAcre = 1.4; // Slightly lower baseline land cost
+            if (energyDistance < 20) landPricePerAcre = 2.5; // Urban
+            else if (energyDistance < 40) landPricePerAcre = 1.8; // Semi-urban
+            
+            // Calculate land requirement (scales with capacity)
+            const landRequired = Math.max(5, capacity_kg_day / 200); // Min 5 acres
+            const landCost = landRequired * landPricePerAcre;
+            
+            // Equipment cost scales with capacity - reduced for better economics
+            const electrolyzerCost = (capacity_kg_day / 1000) * 25; // ₹25Cr per 1000kg/day
+            const powerElectronics = electrolyzerCost * 0.35;
+            const gasProcessing = electrolyzerCost * 0.65;
+            const compression = electrolyzerCost * 0.35;
+            const installation = electrolyzerCost * 0.20;
+            
+            // Infrastructure scales with capacity and location - reduced costs
+            const electricalSubstation = (capacity_kg_day / 1000) * 4;
+            const waterTreatment = (capacity_kg_day / 1000) * 3.5;
+            const buildings = (capacity_kg_day / 1000) * 4.5;
+            
+            // Permits cost more in urban areas
+            const permitsBase = (capacity_kg_day / 1000) * 10;
+            const permitsMultiplier = energyDistance < 30 ? 1.2 : 1.0;
+            const permitsCost = permitsBase * permitsMultiplier;
+            
+            // Working capital
+            const equipmentTotal = electrolyzerCost + powerElectronics + gasProcessing + compression + installation;
+            const infrastructureTotal = electricalSubstation + waterTreatment + buildings;
+            const totalBeforeWC = landCost + equipmentTotal + infrastructureTotal + permitsCost;
+            const workingCapital = totalBeforeWC * 0.10;
+            
+            // Operating costs vary by location - more favorable rates for large scale
+            const electricityRate = energyDistance < 20 ? 2.8 : 2.5; // Better bulk rates
+            const annualElectricity = (capacity_kg_day * 365 * 0.85 * 55 * electricityRate) / 10_000_000;
+            const annualWater = (capacity_kg_day / 1000) * 0.5; // Reduced water costs
+            const staffCount = Math.max(25, capacity_kg_day / 2000); // Better staffing efficiency
+            const annualStaff = (staffCount / 25) * 3.5;
+            const annualMaintenance = totalBeforeWC * 0.015; // Lower maintenance
+            const annualOther = (annualElectricity + annualWater + annualStaff + annualMaintenance) * 0.10;
+            
+            // Revenue varies by market proximity - better pricing for large scale
+            const hydrogenPrice = demandDistance < 15 ? 420 : demandDistance < 30 ? 400 : 380;
+            const annualProduction = capacity_kg_day * 365 * 0.85;
+            const annualRevenue = (annualProduction * hydrogenPrice) / 10_000_000;
+            const totalOpex = annualElectricity + annualWater + annualStaff + annualMaintenance + annualOther;
+            const annualProfit = annualRevenue - totalOpex;
+            
+            // Financial metrics
+            const totalCapex = totalBeforeWC + workingCapital;
+            const roi = (annualProfit / totalCapex) * 100;
+            // Payback only makes sense with positive annual profit; otherwise it's effectively "never"
+            const payback = annualProfit > 0 ? (totalCapex / annualProfit) : Number.POSITIVE_INFINITY;
+            
+            return {
+              projected_cost_per_kg: Math.round(hydrogenPrice),
+              annual_capacity_mt: Math.round((annualProduction / 1000) * 10) / 10,
+              payback_period_years: Number.isFinite(payback) ? Math.round(payback * 10) / 10 : "Never",
+              roi_percentage: Math.round(roi * 10) / 10
+            };
+          };
 
-            {/* Economic Scoring Details (if available) */}
-            {location.economic_analysis && !location.economic_analysis.simplified && (
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
-                  <Percent className="w-4 h-4" />
-                  Economic Viability Breakdown
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-white/60 p-2 rounded">
-                    <span className="text-gray-600">ROI Score:</span>
-                    <span className="font-medium ml-1">{location.economic_analysis.roi_score || 'N/A'}/100</span>
-                  </div>
-                  <div className="bg-white/60 p-2 rounded">
-                    <span className="text-gray-600">Payback Score:</span>
-                    <span className="font-medium ml-1">{location.economic_analysis.payback_score || 'N/A'}/100</span>
-                  </div>
-                  <div className="bg-white/60 p-2 rounded">
-                    <span className="text-gray-600">Cost Score:</span>
-                    <span className="font-medium ml-1">{location.economic_analysis.cost_score || 'N/A'}/100</span>
-                  </div>
-                  <div className="bg-white/60 p-2 rounded">
-                    <span className="text-gray-600">NPV Score:</span>
-                    <span className="font-medium ml-1">{location.economic_analysis.npv_score || 'N/A'}/100</span>
-                  </div>
-                </div>
-                
-                {location.economic_analysis.profit_margin_percentage && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-center">
-                    <span className="text-xs text-green-800">
-                      💰 Profit Margin: {location.economic_analysis.profit_margin_percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+          const dynamicMetrics = calculateDynamicInvestment();
 
-            {/* Key Financial Metrics */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <IndianRupee className="w-4 h-4 text-green-600" />
-                  <span className="text-xs font-medium text-green-800">Production Cost</span>
-                </div>
-                <p className="text-lg font-bold text-green-900">
-                  ₹{productionMetrics.projected_cost_per_kg || 0}/kg
-                </p>
-              </div>
+          return (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-mocha flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Economic Analysis
+              </h3>
 
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Factory className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-800">Annual Capacity</span>
+              {/* Economic Scoring Details (if available) */}
+              {location.economic_analysis && !location.economic_analysis.simplified && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                    <Percent className="w-4 h-4" />
+                    Economic Viability Breakdown
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white/60 p-2 rounded">
+                      <span className="text-gray-600">ROI Score:</span>
+                      <span className="font-medium ml-1">{location.economic_analysis.roi_score || 'N/A'}/100</span>
+                    </div>
+                    <div className="bg-white/60 p-2 rounded">
+                      <span className="text-gray-600">Payback Score:</span>
+                      <span className="font-medium ml-1">{location.economic_analysis.payback_score || 'N/A'}/100</span>
+                    </div>
+                    <div className="bg-white/60 p-2 rounded">
+                      <span className="text-gray-600">Cost Score:</span>
+                      <span className="font-medium ml-1">{location.economic_analysis.cost_score || 'N/A'}/100</span>
+                    </div>
+                    <div className="bg-white/60 p-2 rounded">
+                      <span className="text-gray-600">NPV Score:</span>
+                      <span className="font-medium ml-1">{location.economic_analysis.npv_score || 'N/A'}/100</span>
+                    </div>
+                  </div>
+                  
+                  {location.economic_analysis.profit_margin_percentage && (
+                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-center">
+                      <span className="text-xs text-green-800">
+                        💰 Profit Margin: {location.economic_analysis.profit_margin_percentage.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-lg font-bold text-blue-900">
-                  {productionMetrics.annual_capacity_mt || 0} MT
-                </p>
-              </div>
+              )}
 
-              <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                  <span className="text-xs font-medium text-orange-800">Payback Period</span>
+              {/* Key Financial Metrics */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <IndianRupee className="w-4 h-4 text-green-600" />
+                    <span className="text-xs font-medium text-green-800">Production Cost</span>
+                  </div>
+                  <p className="text-lg font-bold text-green-900">
+                    ₹{dynamicMetrics.projected_cost_per_kg}/kg
+                  </p>
                 </div>
-                <p className="text-lg font-bold text-orange-900">
-                  {productionMetrics.payback_period_years || 0} years
-                </p>
-              </div>
 
-              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-purple-600" />
-                  <span className="text-xs font-medium text-purple-800">ROI</span>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Factory className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-800">Annual Capacity</span>
+                  </div>
+                  <p className="text-lg font-bold text-blue-900">
+                    {dynamicMetrics.annual_capacity_mt} MT
+                  </p>
                 </div>
-                <p className="text-lg font-bold text-purple-900">
-                  {productionMetrics.roi_percentage || 0}%
-                </p>
+
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-4 h-4 text-orange-600" />
+                    <span className="text-xs font-medium text-orange-800">Payback Period</span>
+                  </div>
+                  <p className="text-lg font-bold text-orange-900">
+                    {dynamicMetrics.payback_period_years} years
+                  </p>
+                </div>
+
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-800">ROI</span>
+                  </div>
+                  <p className="text-lg font-bold text-purple-900">
+                    {dynamicMetrics.roi_percentage}%
+                  </p>
+                </div>
               </div>
             </div>
+          );
+        })()}
 
-            {/* Detailed Economics - Dynamic based on location data */}
-            <div className="space-y-3">
+        <Separator className="bg-border" />
+
+        <div className="space-y-3">
                 <h4 className="font-medium text-mocha flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
                   Complete Investment Analysis
@@ -658,9 +831,7 @@ const LocationDetails = ({ location, onClose, embedded = false }) => {
                     </>
                   );
                 })()}
-              </div>
-          </div>
-        )}
+        </div>
 
         <Separator className="bg-mocha/20" />
 

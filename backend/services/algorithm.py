@@ -380,7 +380,7 @@ class HydrogenLocationOptimizer:
         return {
             'capacity_kg_day': round(base_capacity * 1000 / 330, 1),  # Convert to kg/day
             'annual_capacity_mt': base_capacity,
-            'projected_cost_per_kg': round(base_cost_inr / 100, 2),  # Convert INR to display format (₹/kg)
+            'projected_cost_per_kg': round(base_cost_inr, 2),  # Keep actual INR value (₹/kg)
             'payback_period_years': round(min(20, payback_years), 1) if payback_years != float('inf') else float('inf'),
             'roi_percentage': round(min(40, max(5, roi_percentage)), 1),
             'capex_crores': round(capex_cr, 1),
@@ -458,6 +458,15 @@ class HydrogenLocationOptimizer:
             demand_centers[0] if demand_centers else None, 
             water_sources[0] if water_sources else None
         )
+        
+        # Debug: Print production metrics to see what we're returning
+        print(f"📊 Production Metrics for location {location.latitude:.4f}, {location.longitude:.4f}:")
+        print(f"   Cost per kg: ₹{production_metrics.get('projected_cost_per_kg', 'N/A')}")
+        print(f"   Annual capacity: {production_metrics.get('annual_capacity_mt', 'N/A')} MT")
+        print(f"   Payback period: {production_metrics.get('payback_period_years', 'N/A')} years")
+        print(f"   ROI: {production_metrics.get('roi_percentage', 'N/A')}%")
+        print(f"   Full metrics: {production_metrics}")
+        print("---")
         
         # Determine overall grade based on final score
         overall_grade = self._get_overall_grade(overall_score)
