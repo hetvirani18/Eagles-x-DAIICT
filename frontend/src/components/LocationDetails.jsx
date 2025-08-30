@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Star, Zap, Factory, Droplets, MapPin, TrendingUp, DollarSign, Clock, Percent } from 'lucide-react';
 
-const LocationDetails = ({ location, onClose }) => {
+const LocationDetails = ({ location, onClose, embedded = false }) => {
   if (!location) return null;
 
   const getScoreColor = (score) => {
@@ -41,22 +41,25 @@ const LocationDetails = ({ location, onClose }) => {
     transport: location.nearest_transport || location.nearestTransport || {}
   };
 
-  return (
-    <Card className="w-full max-w-md h-fit border-mocha bg-card">
-      <CardHeader className="pb-4 border-b border-mocha/20">
-        <CardTitle className="flex items-center justify-between text-mocha">
-          <div className="flex items-center gap-2">
-            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-            <span>Optimal Location</span>
-          </div>
-          <button 
-            onClick={onClose}
-            className="text-mocha/60 hover:text-mocha transition-colors"
-          >
-            ✕
-          </button>
-        </CardTitle>
-      </CardHeader>
+  const content = (
+    <>
+      {/* Header - only show when not embedded */}
+      {!embedded && (
+        <CardHeader className="pb-4 border-b border-border">
+          <CardTitle className="flex items-center justify-between text-foreground">
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+              <span>Optimal Location</span>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ✕
+            </button>
+          </CardTitle>
+        </CardHeader>
+      )}
       
       <CardContent className="space-y-4">
         {/* Overall Score */}
@@ -65,16 +68,16 @@ const LocationDetails = ({ location, onClose }) => {
             <TrendingUp className="w-4 h-4 mr-1" />
             {getScoreLabel(overallScore)} - {overallScore}/300
           </div>
-          <p className="text-sm text-mocha/70">
+          <p className="text-sm text-muted-foreground">
             Coordinates: {coordinates[0]?.toFixed(4) || 'N/A'}°, {coordinates[1]?.toFixed(4) || 'N/A'}°
           </p>
         </div>
 
-        <Separator className="bg-mocha/20" />
+        <Separator className="bg-border" />
 
         {/* Production Metrics */}
         <div className="space-y-3">
-          <h3 className="font-semibold text-sm uppercase tracking-wide text-mocha">
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-foreground">
             Production Potential
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -127,7 +130,7 @@ const LocationDetails = ({ location, onClose }) => {
 
         {/* Proximity Analysis */}
         <div className="space-y-3">
-          <h3 className="font-semibold text-sm uppercase tracking-wide text-mocha">
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-foreground">
             Proximity Analysis
           </h3>
           
@@ -236,12 +239,12 @@ const LocationDetails = ({ location, onClose }) => {
           )}
         </div>
 
-        <Separator className="bg-mocha/20" />
+        <Separator className="bg-border" />
 
         {/* Investment Summary */}
-        <div className="bg-coconut border border-mocha/20 p-3 rounded-lg">
-          <h4 className="font-medium text-mocha mb-2">Investment Recommendation</h4>
-          <p className="text-sm text-mocha/80">
+        <div className="bg-muted border border-border p-3 rounded-lg">
+          <h4 className="font-medium text-foreground mb-2">Investment Recommendation</h4>
+          <p className="text-sm text-muted-foreground">
             This location offers {getScoreLabel(overallScore).toLowerCase()} potential for green hydrogen production 
             with competitive costs and strategic positioning near key infrastructure. 
             {productionMetrics.roi_percentage && productionMetrics.roi_percentage > 15 && 
@@ -249,8 +252,20 @@ const LocationDetails = ({ location, onClose }) => {
           </p>
         </div>
       </CardContent>
-    </Card>
+    </>
   );
+
+  // Return content wrapped in Card when not embedded
+  if (!embedded) {
+    return (
+      <Card className="w-full max-w-md h-fit border-border bg-card">
+        {content}
+      </Card>
+    );
+  }
+
+  // Return content directly when embedded
+  return content;
 };
 
 export default LocationDetails;
