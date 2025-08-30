@@ -1,8 +1,5 @@
 
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-
-import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -103,13 +100,11 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
     optimal: createCustomIcon('#22c55e', 'star')
   }), []);
 
-  const handleOptimalLocationClick = useCallback((location) => {
   const [resourceRadii, setResourceRadii] = useState({
     energy: null,
     demand: null,
     water: null
   });
-  const gujaratCenter = [22.5, 71.5];
 
   // Calculate distance between two points using Haversine formula
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -176,11 +171,11 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
     });
   };
 
-  const handleOptimalLocationClick = (location) => {
+  const handleOptimalLocationClick = useCallback((location) => {
     setSelectedOptimalLocation(location);
     calculateResourceRadii(location);
     onLocationSelect(location);
-  }, [onLocationSelect]);
+  }, [onLocationSelect, calculateResourceRadii]);
 
   const handleViewportChange = useCallback((bounds) => {
     setVisibleBounds(bounds);
@@ -203,7 +198,7 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
         isInBounds(source.location.latitude, source.location.longitude)
       ) || []
     };
-  }, [visibleBounds, energySources, demandCenters, waterSources]);
+  }, [visibleBounds, energySources, demandCenters, waterSources, optimalLocations]);
 
   if (loading) {
     return (
