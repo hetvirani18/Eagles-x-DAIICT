@@ -48,13 +48,13 @@ function App() {
       {/* Header */}
       <header className="bg-card border-b border-border shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo and Title */}
+          <div className="flex items-center justify-center h-16 relative">
+            {/* Logo and Title - Centered */}
             <div className="flex items-center gap-3">
               <div className="bg-primary p-2 rounded-lg">
                 <Droplets className="w-6 h-6 text-primary-foreground" />
               </div>
-              <div>
+              <div className="text-center">
                 <h1 className="text-xl font-bold text-foreground">
                   Green Hydrogen Infrastructure Mapping & Optimization
                 </h1>
@@ -64,18 +64,18 @@ function App() {
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Positioned absolutely on the right */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden"
+              className="lg:hidden absolute right-4"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
 
-            {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-4">
+            {/* Desktop Actions - Positioned absolutely on the right */}
+            <div className="hidden lg:flex items-center gap-4 absolute right-4 sm:right-6 lg:right-8">
               <Button
                 variant="outline"
                 size="sm"
