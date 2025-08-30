@@ -80,6 +80,19 @@ export const algorithmAPI = {
   getPreCalculated: () => apiClient.get('/optimal-locations')
 };
 
+// New Infrastructure APIs
+export const pipelinesAPI = {
+  getAll: (type) => apiClient.get('/pipelines', { params: type ? { type } : {} }),
+};
+
+export const storageAPI = {
+  getAll: (type) => apiClient.get('/storage-facilities', { params: type ? { type } : {} }),
+};
+
+export const distributionAPI = {
+  getAll: (type) => apiClient.get('/distribution-hubs', { params: type ? { type } : {} }),
+};
+
 // Utility function to handle API errors
 export const handleApiError = (error, context = '') => {
   console.error(`API Error in ${context}:`, error);

@@ -27,9 +27,9 @@ async def get_comprehensive_market_intelligence(location):
         },
         "pricing_analysis": {
             "current_prices_inr_per_kg": {
-                "industrial": 350,
-                "transportation": 380,
-                "export": 420
+                "industrial": 280,      # More realistic industrial price
+                "transportation": 320,  # Reduced from 380
+                "export": 350          # Reduced from 420
             },
             "price_trend_5_year": "Increasing"
         },
@@ -199,11 +199,14 @@ class InteractiveInvestmentTools:
         
         lat, lng = location
         
-        # Base analysis for financial calculations
+        # Base analysis for financial calculations - using dynamic pricing
+        base_price = 280 + (capacity_kg_day / 10000) * 50  # Scale-based pricing: 280-330 range
+        base_price = max(280, min(350, base_price))  # Bound between 280-350
+        
         base_analysis = {
             'total_capex': 150.0,  # Will be refined by investor calculator
             'total_annual_opex': 45.0,
-            'hydrogen_price_per_kg': 350.0,
+            'hydrogen_price_per_kg': base_price,
             'annual_production_tonnes': capacity_kg_day * 330 / 1000,
             'capacity_utilization': 0.85,
             'roi_percentage': 18.5,
@@ -314,11 +317,14 @@ class InteractiveInvestmentTools:
         optimization_results = []
         
         for capacity in range(min_capacity, max_capacity + 1, step_size):
-            # Run financial analysis for this capacity
+            # Run financial analysis for this capacity with dynamic pricing
+            dynamic_price = 280 + (capacity / 10000) * 50  # Scale-based pricing
+            dynamic_price = max(280, min(350, dynamic_price))
+            
             base_analysis = {
                 'total_capex': capacity * 0.15,  # ₹15 lakh per kg/day capacity
                 'total_annual_opex': capacity * 0.045,  # ₹4,500 per kg/day annually
-                'hydrogen_price_per_kg': 350.0,
+                'hydrogen_price_per_kg': dynamic_price,
                 'annual_production_tonnes': capacity * 330 / 1000,
                 'capacity_utilization': 0.85
             }

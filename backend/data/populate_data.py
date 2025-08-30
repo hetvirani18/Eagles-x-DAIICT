@@ -3,7 +3,10 @@ from database import get_database
 from data.real_gujarat_data import (
     get_comprehensive_energy_sources, 
     get_comprehensive_demand_centers,
-    get_all_gujarat_cities
+    get_all_gujarat_cities,
+    get_pipeline_infrastructure,
+    get_storage_facilities,
+    get_distribution_hubs
 )
 import asyncio
 
@@ -15,7 +18,7 @@ async def populate_comprehensive_data():
     
     # Clear existing data
     collections = ['energy_sources', 'demand_centers', 'water_sources', 'water_bodies', 
-                  'gas_pipelines', 'road_networks', 'cities']
+                  'gas_pipelines', 'road_networks', 'cities', 'pipelines', 'storage_facilities', 'distribution_hubs']
     
     for collection in collections:
         await db[collection].delete_many({})
@@ -210,6 +213,22 @@ async def populate_comprehensive_data():
         await db.cities.insert_many([city.dict() for city in cities])
         print(f"✅ Inserted {len(cities)} REAL Gujarat cities")
         
+        # 8. NEW INFRASTRUCTURE DATA
+        # Pipelines
+        pipelines = get_pipeline_infrastructure()
+        await db.pipelines.insert_many([pipeline.dict() for pipeline in pipelines])
+        print(f"✅ Inserted {len(pipelines)} pipeline infrastructure")
+        
+        # Storage Facilities
+        storage_facilities = get_storage_facilities()
+        await db.storage_facilities.insert_many([facility.dict() for facility in storage_facilities])
+        print(f"✅ Inserted {len(storage_facilities)} storage facilities")
+        
+        # Distribution Hubs
+        distribution_hubs = get_distribution_hubs()
+        await db.distribution_hubs.insert_many([hub.dict() for hub in distribution_hubs])
+        print(f"✅ Inserted {len(distribution_hubs)} distribution hubs")
+        
         print("\n🎉 COMPREHENSIVE REAL GUJARAT DATA POPULATED SUCCESSFULLY!")
         print(f"📊 TOTAL DATA SUMMARY:")
         print(f"   🔋 Energy Sources: {len(energy_sources)} (Solar, Wind, Hybrid)")
@@ -218,8 +237,11 @@ async def populate_comprehensive_data():
         print(f"   ⛽ Gas Pipelines: {len(gas_pipelines)} networks")
         print(f"   🛣️ Road Networks: {len(road_networks)} highways")
         print(f"   🏙️ Cities: {len(cities)} municipalities")
-        print(f"   📍 TOTAL MARKERS ON MAP: {len(energy_sources) + len(demand_centers) + len(water_sources) + len(water_bodies)} infrastructure points")
-        print("\n🚀 H₂-Optimize now has COMPREHENSIVE REAL Gujarat infrastructure data!")
+        print(f"   � H2 Pipelines: {len(pipelines)} networks (existing & planned)")
+        print(f"   🏭 Storage Facilities: {len(storage_facilities)} facilities")
+        print(f"   🚛 Distribution Hubs: {len(distribution_hubs)} hubs")
+        print(f"   �📍 TOTAL INFRASTRUCTURE POINTS: {len(energy_sources) + len(demand_centers) + len(water_sources) + len(water_bodies) + len(pipelines) + len(storage_facilities) + len(distribution_hubs)}")
+        print("\n🚀 H₂-Optimize now has COMPREHENSIVE HYDROGEN ECOSYSTEM data!")
         
     except Exception as e:
         print(f"❌ Error inserting data: {e}")

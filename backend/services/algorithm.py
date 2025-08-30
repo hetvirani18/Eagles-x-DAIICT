@@ -184,19 +184,44 @@ class HydrogenLocationOptimizer:
         """Calculate economic viability score based on simplified financial analysis"""
         
         if not (nearest_energy and nearest_demand and nearest_water):
-            # Fallback to simple economic estimation
+            # Fallback to dynamic economic estimation based on available data
             return 50, {'simplified': True, 'message': 'Limited data for full economic analysis'}
         
         try:
-            # Use simplified economic scoring for reliable operation
+            # Dynamic economic scoring based on actual resource costs
             basic_score = self._calculate_basic_economic_score(nearest_energy, nearest_demand, nearest_water)
             
-            # Calculate some basic economic metrics
-            electricity_price = nearest_energy.cost_per_kwh if nearest_energy else 3.5
-            hydrogen_price = 350  # ₹350/kg default
-            annual_capacity = 15000  # MT/year base capacity
+            # Dynamic pricing based on electricity costs and local conditions
+            electricity_price = getattr(nearest_energy, 'cost_per_kwh', 3.5)
             
-            # Simple ROI calculation
+            # Calculate location-specific hydrogen price
+            # Electricity is 70-80% of production cost
+            base_electricity_cost = electricity_price * 55  # 55 kWh per kg H2
+            other_production_costs = 45  # Water, O&M, labor etc.
+            production_cost = base_electricity_cost + other_production_costs
+            
+            # Add margin based on scale and risk
+            demand_capacity = getattr(nearest_demand, 'hydrogen_demand_mt_year', 1000)
+            if demand_capacity > 5000:
+                margin = 0.15  # Large market, lower risk
+            elif demand_capacity > 2000:
+                margin = 0.20  # Medium market
+            else:
+                margin = 0.25  # Small market, higher risk
+                
+            hydrogen_price = production_cost * (1 + margin)
+            
+            # Dynamic capacity based on resource availability and demand
+            electricity_mw = getattr(nearest_energy, 'capacity_mw', 50.0)
+            max_production_from_electricity = (electricity_mw * 1000 * 24) / 55  # kg/day
+            water_capacity = getattr(nearest_water, 'capacity_liters_day', 50000)
+            max_production_from_water = water_capacity / 10  # kg/day (10L per kg H2)
+            
+            # Annual capacity is constrained by lowest resource
+            daily_capacity = min(max_production_from_electricity, max_production_from_water, demand_capacity * 1000 / 365)
+            annual_capacity = daily_capacity * 330  # MT/year (90% uptime)
+            
+            # Calculate revenues and costs dynamically
             annual_revenue_cr = annual_capacity * hydrogen_price / 100000  # Convert to crores
             capex_cr = annual_capacity * 0.8  # Estimated CAPEX
             opex_cr = annual_revenue_cr * 0.6  # OPEX as 60% of revenue
@@ -274,6 +299,9 @@ class HydrogenLocationOptimizer:
     async def calculate_production_metrics(self, overall_score: float, 
                                          energy_info: dict, demand_info: dict,
                                          location: LocationPoint,
+                                         energy_score: float = 50,
+                                         water_score: float = 50,
+                                         infrastructure_score: float = 50,
                                          nearest_energy: EnergySource = None,
                                          nearest_demand: DemandCenter = None,
                                          nearest_water: WaterSource = None) -> dict:
@@ -315,7 +343,7 @@ class HydrogenLocationOptimizer:
                     return {
                         'capacity_kg_day': scenario.capacity_kg_day,
                         'annual_capacity_mt': scenario.annual_production_tonnes,
-                        'projected_cost_per_kg': 350,
+                        'projected_cost_per_kg': scenario.hydrogen_price_per_kg if hasattr(scenario, 'hydrogen_price_per_kg') else 350,
                         'electricity_required_mw': scenario.electricity_required_mw,
                         'water_required_lph': scenario.water_required_lph,
                         'land_required_acres': scenario.land_required_acres,
@@ -350,43 +378,246 @@ class HydrogenLocationOptimizer:
                 # Fallback to simple calculation
                 pass
         
-        # Fallback: Simple calculation based on score
-        base_cost_inr = 350  # Base cost per kg in INR
-        base_capacity = 15000  # Base capacity in MT/year
+        # Fallback: Enhanced dynamic calculation based on actual location characteristics
         
-        # Cost reduction factors based on infrastructure quality
-        if overall_score > 250:
-            cost_reduction = (overall_score - 200) / 100 * 80  # Up to 80 INR reduction
-            base_cost_inr = max(200, base_cost_inr - cost_reduction)
-            
-        # Capacity increase factors  
-        if overall_score > 200:
-            capacity_multiplier = 1 + (overall_score - 200) / 200
-            base_capacity = int(base_capacity * capacity_multiplier)
+        # 1. Get actual resource data from nearest sources
+        electricity_capacity_mw = getattr(nearest_energy, 'capacity_mw', 50.0) if nearest_energy else 50.0
+        electricity_base_cost = getattr(nearest_energy, 'cost_per_kwh', 3.5) if nearest_energy else 3.5
+        energy_type = getattr(nearest_energy, 'type', 'grid') if nearest_energy else 'grid'
         
-        # Calculate payback and ROI based on economics
-        annual_revenue_cr = base_capacity * base_cost_inr * 1.2 / 10000000  # Revenue in crores
-        capex_cr = base_capacity * 0.8  # Estimated CAPEX in crores
-        opex_cr = annual_revenue_cr * 0.6  # OPEX as 60% of revenue
+        water_capacity_lpd = getattr(nearest_water, 'capacity_liters_day', 50000) if nearest_water else 50000
+        water_quality = getattr(nearest_water, 'quality_score', 5) if nearest_water else 5
+        
+        demand_mt_year = getattr(nearest_demand, 'hydrogen_demand_mt_year', 2000) if nearest_demand else 2000
+        
+        # 2. Calculate location-adjusted electricity cost
+        # Energy source type adjustments
+        energy_type_factors = {
+            'solar': 0.82,      # 18% lower cost due to declining solar prices
+            'wind': 0.85,       # 15% lower cost, good capacity factors
+            'hydro': 0.88,      # 12% lower cost, stable generation
+            'nuclear': 0.90,    # 10% lower cost, baseload power
+            'gas': 1.08,        # 8% higher cost due to fuel volatility
+            'coal': 1.15,       # 15% higher cost due to carbon pricing
+            'grid': 1.0         # Base grid price
+        }
+        
+        # Infrastructure quality adjustments
+        if infrastructure_score > 280:
+            infra_factor = 0.92  # 8% reduction for excellent infrastructure
+        elif infrastructure_score > 220:
+            infra_factor = 0.96  # 4% reduction for good infrastructure
+        elif infrastructure_score < 160:
+            infra_factor = 1.12  # 12% increase for poor infrastructure
+        else:
+            infra_factor = 1.0
+        
+        # Distance penalties (from energy_info if available)
+        distance_factor = 1.0
+        if energy_info and 'distance_km' in energy_info:
+            distance_km = energy_info['distance_km']
+            if distance_km > 80:
+                distance_factor = 1.18  # 18% penalty for very remote
+            elif distance_km > 40:
+                distance_factor = 1.08  # 8% penalty for remote
+        
+        effective_electricity_cost = electricity_base_cost * energy_type_factors.get(energy_type, 1.0) * infra_factor * distance_factor
+        
+        # 3. Calculate hydrogen production cost components
+        # Electrolyzer efficiency varies by technology and scale
+        if electricity_capacity_mw > 100:
+            electrolyzer_efficiency = 0.78  # Large scale, better efficiency
+            kwh_per_kg = 53 / electrolyzer_efficiency
+        elif electricity_capacity_mw > 30:
+            electrolyzer_efficiency = 0.75  # Medium scale
+            kwh_per_kg = 55 / electrolyzer_efficiency
+        else:
+            electrolyzer_efficiency = 0.72  # Small scale
+            kwh_per_kg = 57 / electrolyzer_efficiency
+        
+        electricity_cost_per_kg = effective_electricity_cost * kwh_per_kg
+        
+        # 4. Water cost calculation - quality and capacity dependent
+        base_water_cost_per_kg = 20  # Base cost for 10L per kg H2
+        
+        # Water quality adjustments
+        if water_quality >= 8:
+            water_quality_factor = 0.75  # 25% reduction for excellent quality
+        elif water_quality >= 6:
+            water_quality_factor = 0.85  # 15% reduction for good quality
+        elif water_quality <= 3:
+            water_quality_factor = 1.35  # 35% increase for poor quality
+        else:
+            water_quality_factor = 1.0
+        
+        # Water capacity/scale adjustments
+        if water_capacity_lpd > 200000:
+            water_scale_factor = 0.80  # 20% reduction for large capacity
+        elif water_capacity_lpd > 80000:
+            water_scale_factor = 0.90  # 10% reduction for medium capacity
+        elif water_capacity_lpd < 20000:
+            water_scale_factor = 1.25  # 25% increase for limited capacity
+        else:
+            water_scale_factor = 1.0
+        
+        water_cost_per_kg = base_water_cost_per_kg * water_quality_factor * water_scale_factor
+        
+        # 5. Operations and maintenance costs (location and scale dependent)
+        base_om_cost_per_kg = 45  # Base O&M cost
+        
+        # Scale economies
+        if demand_mt_year > 8000:
+            scale_factor = 0.85  # 15% reduction for large scale
+        elif demand_mt_year > 3000:
+            scale_factor = 0.92  # 8% reduction for medium scale
+        elif demand_mt_year < 1000:
+            scale_factor = 1.20  # 20% increase for small scale
+        else:
+            scale_factor = 1.0
+        
+        # Location operational complexity
+        if overall_score > 280:
+            complexity_factor = 0.88  # 12% reduction for easy operations
+        elif overall_score < 180:
+            complexity_factor = 1.25  # 25% increase for complex operations
+        else:
+            complexity_factor = 1.0
+        
+        om_cost_per_kg = base_om_cost_per_kg * scale_factor * complexity_factor
+        
+        # 6. Total production cost
+        total_production_cost = electricity_cost_per_kg + water_cost_per_kg + om_cost_per_kg
+        
+        # 7. Risk and profit margins (dynamic based on multiple factors)
+        base_margin = 0.18  # 18% base margin
+        
+        # Market risk adjustments
+        if demand_mt_year > 5000:
+            market_risk = -0.03  # Reduce margin for large stable markets
+        elif demand_mt_year < 1500:
+            market_risk = 0.05   # Increase margin for small markets
+        else:
+            market_risk = 0
+        
+        # Technology risk adjustments
+        tech_risk = 0
+        if energy_type in ['solar', 'wind']:
+            tech_risk = 0.02  # Small premium for renewable integration challenges
+        
+        # Location risk adjustments
+        if overall_score > 280:
+            location_risk = -0.04  # Reduce margin for excellent locations
+        elif overall_score < 180:
+            location_risk = 0.07   # Increase margin for challenging locations
+        else:
+            location_risk = 0
+        
+        total_margin = base_margin + market_risk + tech_risk + location_risk
+        total_margin = max(0.10, min(0.30, total_margin))  # Keep margin between 10-30%
+        
+        final_cost_per_kg = total_production_cost * (1 + total_margin)
+        
+        # Market reality bounds
+        final_cost_per_kg = max(180, min(480, final_cost_per_kg))
+        
+        # 8. Dynamic capacity calculation based on actual constraints
+        # Electricity constraint
+        max_capacity_from_electricity = (electricity_capacity_mw * 1000 * 24 * 0.82) / kwh_per_kg  # kg/day, 82% capacity factor
+        
+        # Water constraint  
+        max_capacity_from_water = water_capacity_lpd / 10  # 10L per kg H2
+        
+        # Market constraint
+        max_capacity_from_market = demand_mt_year * 1000 / 300  # kg/day, allowing for 65 days downtime
+        
+        # Actual daily capacity (most limiting factor)
+        daily_capacity = min(max_capacity_from_electricity, max_capacity_from_water, max_capacity_from_market * 1.15)  # 15% overcapacity for growth
+        
+        # Minimum viable scale check
+        daily_capacity = max(daily_capacity, 500)  # Minimum 500 kg/day for economic viability
+        
+        annual_capacity_mt = daily_capacity * 300 / 1000  # MT/year, 300 operating days
+        
+        # 9. Financial analysis with dynamic factors
+        annual_revenue_cr = annual_capacity_mt * final_cost_per_kg * 1000 / 10000000  # Revenue in crores
+        
+        # CAPEX calculation - varies significantly with technology and scale
+        if daily_capacity > 10000:
+            capex_per_kg_day = 95000   # ₹95k per kg/day for large scale
+        elif daily_capacity > 5000:
+            capex_per_kg_day = 110000  # ₹110k per kg/day for medium scale
+        elif daily_capacity > 2000:
+            capex_per_kg_day = 130000  # ₹130k per kg/day for small scale
+        else:
+            capex_per_kg_day = 155000  # ₹155k per kg/day for very small scale
+        
+        # Technology adjustments
+        if energy_type in ['solar', 'wind']:
+            capex_per_kg_day *= 1.12  # 12% higher for renewable integration
+        elif energy_type == 'grid':
+            capex_per_kg_day *= 0.95  # 5% lower for grid connection
+        
+        # Location adjustments
+        if overall_score < 180:
+            capex_per_kg_day *= 1.22  # 22% higher for challenging locations
+        elif overall_score > 280:
+            capex_per_kg_day *= 0.92  # 8% lower for excellent locations
+        
+        capex_cr = daily_capacity * capex_per_kg_day / 10000000  # CAPEX in crores
+        
+        # OPEX calculation - varies with efficiency and location
+        if overall_score > 280:
+            opex_ratio = 0.58  # 58% of revenue for excellent locations
+        elif overall_score > 220:
+            opex_ratio = 0.64  # 64% of revenue for good locations
+        elif overall_score < 180:
+            opex_ratio = 0.72  # 72% of revenue for challenging locations
+        else:
+            opex_ratio = 0.66  # 66% of revenue for average locations
+        
+        opex_cr = annual_revenue_cr * opex_ratio
         annual_profit_cr = annual_revenue_cr - opex_cr
         
-        if annual_profit_cr > 0:
+        # 10. Calculate financial metrics
+        if annual_profit_cr > 0 and capex_cr > 0:
             payback_years = capex_cr / annual_profit_cr
             roi_percentage = (annual_profit_cr / capex_cr) * 100
+            
+            # Risk adjustments for financial metrics
+            if overall_score < 180:
+                roi_percentage *= 0.82  # 18% reduction for high-risk
+                payback_years *= 1.25   # 25% longer payback
+            elif overall_score > 280:
+                roi_percentage *= 1.12  # 12% boost for low-risk
+                payback_years *= 0.88   # 12% shorter payback
         else:
             payback_years = float('inf')
             roi_percentage = 0
-            
+        
         return {
-            'capacity_kg_day': round(base_capacity * 1000 / 330, 1),  # Convert to kg/day
-            'annual_capacity_mt': base_capacity,
-            'projected_cost_per_kg': round(base_cost_inr, 2),  # Keep actual INR value (₹/kg)
-            'payback_period_years': round(min(20, payback_years), 1) if payback_years != float('inf') else float('inf'),
-            'roi_percentage': round(min(40, max(5, roi_percentage)), 1),
-            'capex_crores': round(capex_cr, 1),
-            'annual_revenue_crores': round(annual_revenue_cr, 1),
-            'annual_profit_crores': round(annual_profit_cr, 1),
-            'simplified_calculation': True
+            'capacity_kg_day': round(daily_capacity, 1),
+            'annual_capacity_mt': round(annual_capacity_mt, 1),
+            'projected_cost_per_kg': round(final_cost_per_kg, 2),
+            'payback_period_years': round(min(25, payback_years), 1) if payback_years != float('inf') else float('inf'),
+            'roi_percentage': round(max(1, min(35, roi_percentage)), 1),
+            'capex_crores': round(capex_cr, 2),
+            'annual_revenue_crores': round(annual_revenue_cr, 2),
+            'annual_profit_crores': round(annual_profit_cr, 2),
+            'electricity_cost_kwh': round(effective_electricity_cost, 2),
+            'production_breakdown': {
+                'electricity_cost_per_kg': round(electricity_cost_per_kg, 2),
+                'water_cost_per_kg': round(water_cost_per_kg, 2),
+                'om_cost_per_kg': round(om_cost_per_kg, 2),
+                'margin_percentage': round(total_margin * 100, 1)
+            },
+            'capacity_constraints': {
+                'electricity_limit_kg_day': round(max_capacity_from_electricity, 1),
+                'water_limit_kg_day': round(max_capacity_from_water, 1),
+                'market_demand_kg_day': round(max_capacity_from_market, 1),
+                'limiting_factor': 'electricity' if max_capacity_from_electricity <= min(max_capacity_from_water, max_capacity_from_market) else 
+                                 'water' if max_capacity_from_water <= max_capacity_from_market else 'market'
+            },
+            'dynamic_calculation': True
         }
     
     async def analyze_location(self, location: LocationPoint, 
@@ -454,6 +685,7 @@ class HydrogenLocationOptimizer:
         # Production metrics with economic analysis
         production_metrics = await self.calculate_production_metrics(
             overall_score, energy_info, demand_info, location,
+            energy_score, water_score, infrastructure_score,
             energy_sources[0] if energy_sources else None,
             demand_centers[0] if demand_centers else None, 
             water_sources[0] if water_sources else None

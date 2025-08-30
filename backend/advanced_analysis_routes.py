@@ -295,17 +295,46 @@ async def advanced_financial_modeling(request: LocationRequest):
     **Returns:** Comprehensive financial modeling results
     """
     try:
-        # Create base analysis data
+        # Create dynamic base analysis data based on location and capacity
+        electricity_efficiency = max(0.8, min(1.2, request.capacity_kg_day / 5000))  # Efficiency based on scale
+        location_factor = 1.0  # This could be enhanced with actual location scoring
+        
+        # Dynamic hydrogen price based on capacity and efficiency
+        base_hydrogen_price = 350.0
+        if request.capacity_kg_day > 10000:
+            base_hydrogen_price *= 0.9  # Economy of scale discount
+        elif request.capacity_kg_day < 1000:
+            base_hydrogen_price *= 1.15  # Small scale premium
+            
+        # Dynamic financial metrics
+        capex_per_kg_day = 150000 if request.capacity_kg_day > 5000 else 180000  # Scale economics
+        annual_opex_factor = 0.045 if request.capacity_kg_day > 5000 else 0.055
+        
         base_analysis = {
-            'total_capex': request.capacity_kg_day * 0.15,  # ₹15 lakh per kg/day
-            'total_annual_opex': request.capacity_kg_day * 0.045,  # ₹4,500 per kg/day
-            'hydrogen_price_per_kg': 350.0,
+            'total_capex': request.capacity_kg_day * capex_per_kg_day / 1000000,  # Convert to crores
+            'total_annual_opex': request.capacity_kg_day * annual_opex_factor,
+            'hydrogen_price_per_kg': base_hydrogen_price,
             'annual_production_tonnes': request.capacity_kg_day * 330 / 1000,
-            'capacity_utilization': 0.85,
-            'roi_percentage': 18.5,
-            'npv_10_years': 85.0,
-            'payback_period_years': 6.2
+            'capacity_utilization': min(0.95, 0.75 + (request.capacity_kg_day / 20000)),  # Higher utilization for larger plants
         }
+        
+        # Calculate dynamic ROI and payback based on the above factors
+        annual_revenue = base_analysis['annual_production_tonnes'] * 1000 * base_analysis['hydrogen_price_per_kg']
+        annual_profit = annual_revenue - (base_analysis['total_annual_opex'] * 10000000)  # Convert opex to same units
+        
+        if annual_profit > 0 and base_analysis['total_capex'] > 0:
+            calculated_roi = (annual_profit / (base_analysis['total_capex'] * 10000000)) * 100
+            calculated_payback = (base_analysis['total_capex'] * 10000000) / annual_profit
+        else:
+            calculated_roi = 8.0  # Fallback minimum
+            calculated_payback = 12.0  # Fallback maximum
+            
+        # Add calculated values to base_analysis
+        base_analysis.update({
+            'roi_percentage': max(8.0, min(25.0, calculated_roi)),  # Bound between 8-25%
+            'npv_10_years': base_analysis['total_capex'] * 1.5,  # Simplified NPV estimate
+            'payback_period_years': max(4.0, min(15.0, calculated_payback))  # Bound between 4-15 years
+        })
         
         financial_analysis = run_comprehensive_financial_analysis(base_analysis)
         

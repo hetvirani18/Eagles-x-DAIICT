@@ -162,7 +162,7 @@ class InvestorEconomicCalculator:
         # Market Data (Gujarat 2025)
         self.market_data = {
             'h2_price_industrial': 280,          # ₹280/kg industrial
-            'h2_price_mobility': 350,            # ₹350/kg transport
+            'h2_price_mobility': 320,            # ₹320/kg transport (reduced from 350)
             'h2_price_export': 320,              # ₹320/kg export
             'price_growth_rate': 0.06,           # 6% annual growth
             'demand_growth_rate': 0.25,          # 25% demand growth
