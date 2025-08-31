@@ -32,3 +32,50 @@
         transform: rotate(360deg);
     }
 }
+
+/* Print Styles for Export */
+@media print {
+    @page {
+        margin: 0.5in;
+        size: A4;
+    }
+    
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .no-print,
+    header button,
+    .tabs-list,
+    .dropdown-menu {
+        display: none !important;
+    }
+    
+    .print-page-break {
+        page-break-before: always;
+    }
+    
+    .print-avoid-break {
+        page-break-inside: avoid;
+    }
+    
+    .card {
+        border: 1px solid #e5e7eb !important;
+        box-shadow: none !important;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container {
+        max-height: 300px !important;
+    }
+}
+
+.print-mode {
+    background: white !important;
+}
+
+.print-mode * {
+    background: white !important;
+    color: black !important;
+}
