@@ -55,7 +55,13 @@ import {
   Cell,
   Pie,
 } from "recharts";
-import { toNumber, clamp } from "../lib/numeric";
+import { toNumber } from "../lib/numeric";
+import {
+  calculateLocationScore,
+  getScoreColor,
+  getScoreLabel,
+  getRiskLevel,
+} from "../lib/scoring";
 
 const FullAnalysisPage = () => {
   const locationState = useLocation();
@@ -86,11 +92,6 @@ const FullAnalysisPage = () => {
     );
   }
 
-  const safeScore = clamp(
-    selectedLocation?.score ?? selectedLocation?.investmentScore ?? 0,
-    0,
-    100
-  );
   const annualCapacity = toNumber(selectedLocation?.annualCapacityKg, 0);
   const roiPct = toNumber(
     selectedLocation?.roiPercent ?? selectedLocation?.roi,
@@ -129,20 +130,8 @@ const FullAnalysisPage = () => {
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 270) return "text-green-600 bg-green-50";
-    if (score >= 250) return "text-amber-600 bg-amber-50";
-    return "text-red-600 bg-red-50";
-  };
-
-  const getScoreLabel = (score) => {
-    if (score >= 270) return "Excellent";
-    if (score >= 250) return "Good";
-    return "Fair";
-  };
-
-  const overallScore =
-    selectedLocation.overall_score || selectedLocation.score || 0;
+  // Use shared scoring utility for consistency
+  const overallScore = calculateLocationScore(selectedLocation, analysisData);
   const coordinates = selectedLocation.location
     ? [selectedLocation.location.latitude, selectedLocation.location.longitude]
     : selectedLocation.coordinates || [0, 0];
@@ -327,7 +316,15 @@ const FullAnalysisPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <Badge className={`${getScoreColor(overallScore)} font-bold`}>
-                Score: {overallScore}/300
+                Viability Score: {overallScore}/300
+              </Badge>
+              <Badge variant="outline" className="font-medium">
+                Risk Level:{" "}
+                {overallScore >= 200
+                  ? "Low"
+                  : overallScore >= 150
+                  ? "Moderate"
+                  : "High"}
               </Badge>
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
@@ -761,7 +758,7 @@ const FullAnalysisPage = () => {
                             <span className="text-xs">
                               {selectedLocation.transport_score ||
                                 analysisData?.transport_score ||
-                                85}
+                                65}
                               /100
                             </span>
                           </div>
@@ -769,14 +766,14 @@ const FullAnalysisPage = () => {
                             value={
                               selectedLocation.transport_score ||
                               analysisData?.transport_score ||
-                              85
+                              65
                             }
                             className="h-1.5 bg-blue-100"
                             indicatorClassName="bg-blue-500"
                           />
                           <p className="text-[10px] text-muted-foreground mt-0.5">
                             {selectedLocation.transport_details ||
-                              "Major highways and railway connectivity"}
+                              "Highway and railway accessibility with moderate congestion risk"}
                           </p>
                         </div>
 
@@ -788,7 +785,7 @@ const FullAnalysisPage = () => {
                             <span className="text-xs">
                               {selectedLocation.power_score ||
                                 analysisData?.power_score ||
-                                92}
+                                70}
                               /100
                             </span>
                           </div>
@@ -796,14 +793,14 @@ const FullAnalysisPage = () => {
                             value={
                               selectedLocation.power_score ||
                               analysisData?.power_score ||
-                              92
+                              70
                             }
                             className="h-1.5 bg-green-100"
                             indicatorClassName="bg-green-500"
                           />
                           <p className="text-[10px] text-muted-foreground mt-0.5">
                             {selectedLocation.power_details ||
-                              "High-voltage grid access available"}
+                              "Grid access available with moderate stability concerns"}
                           </p>
                         </div>
 
@@ -815,7 +812,7 @@ const FullAnalysisPage = () => {
                             <span className="text-xs">
                               {selectedLocation.water_score ||
                                 analysisData?.water_score ||
-                                78}
+                                60}
                               /100
                             </span>
                           </div>
@@ -823,14 +820,14 @@ const FullAnalysisPage = () => {
                             value={
                               selectedLocation.water_score ||
                               analysisData?.water_score ||
-                              78
+                              60
                             }
                             className="h-1.5 bg-blue-100"
                             indicatorClassName="bg-blue-400"
                           />
                           <p className="text-[10px] text-muted-foreground mt-0.5">
                             {selectedLocation.water_details ||
-                              "Multiple water sources within 5km radius"}
+                              "Water sources available with seasonal variations"}
                           </p>
                         </div>
                       </div>

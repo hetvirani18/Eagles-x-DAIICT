@@ -7,6 +7,7 @@ import { Star, Zap, Factory, Droplets, MapPin, Loader } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useApiData } from '../hooks/useApiData';
+import { calculateLocationScore, getScoreColor } from '../lib/scoring';
 
 // Fix Leaflet default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -386,8 +387,8 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Overall Score:</span>
-                    <Badge variant="outline" className="bg-green-50 text-green-800">
-                      {location.overall_score}/300
+                    <Badge variant="outline" className={getScoreColor(calculateLocationScore(location))}>
+                      {calculateLocationScore(location)}/300
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
