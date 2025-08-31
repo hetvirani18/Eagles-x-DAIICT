@@ -106,14 +106,14 @@ const FullAnalysisPage = () => {
 
   const fetchComprehensiveAnalysis = async () => {
     try {
-      const response = await fetch("/api/v1/advanced/comprehensive-analysis", {
+      const response = await fetch("http://localhost:8080/api/v1/advanced/comprehensive-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           latitude: selectedLocation.location?.latitude || selectedLocation.lat,
           longitude:
             selectedLocation.location?.longitude || selectedLocation.lng,
-          capacity_kg_day: 1000,
+          // Remove hardcoded capacity_kg_day to allow dynamic calculation
           technology_type: "pem",
           electricity_source: "mixed_renewable",
         }),
@@ -241,9 +241,12 @@ const FullAnalysisPage = () => {
 
   const generateFinancialProjectionData = () => {
     const data = [];
-    const initialInvestment = 375; // ₹375 Cr
-    const annualRevenue = 153; // ₹153 Cr/year
-    const annualOpex = 71; // ₹71 Cr/year
+    
+    // Use dynamic values from API response or fallback to defaults
+    const baseAnalysis = analysisData?.base_analysis || {};
+    const initialInvestment = baseAnalysis.total_capex || 375; // Dynamic from API
+    const annualRevenue = baseAnalysis.annual_revenue || 153; // Dynamic from API
+    const annualOpex = baseAnalysis.total_annual_opex || 71; // Dynamic from API
     const annualProfit = annualRevenue - annualOpex;
 
     let cumulativeCashFlow = -initialInvestment;
@@ -1155,7 +1158,7 @@ const FullAnalysisPage = () => {
                       <Separator />
                       <div className="flex justify-between items-center font-semibold">
                         <span>Total CAPEX</span>
-                        <span>₹375 Cr</span>
+                        <span>₹{analysisData?.base_analysis?.total_capex || 375} Cr</span>
                       </div>
                     </div>
                   </CardContent>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Dynamic API Integration</title>
+</head>
+<body>
+    <h1>Test Dynamic API Integration</h1>
+    <button onclick="testDynamicAPI()">Test Dynamic API Call</button>
+    <div id="result"></div>
+
+    <script>
+        async function testDynamicAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch("http://localhost:8080/api/v1/advanced/comprehensive-analysis", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        latitude: 23.0440,
+                        longitude: 70.6200,
+                        technology_type: "pem",
+                        electricity_source: "mixed_renewable",
+                    }),
+                });
+
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                if (data.status === "success" && data.base_analysis) {
+                    const baseAnalysis = data.base_analysis;
+                    resultDiv.innerHTML = `
+                        <h3>✅ SUCCESS! Dynamic API is working:</h3>
+                        <ul>
+                            <li>Optimal Capacity: ${baseAnalysis.optimal_capacity_kg_day?.toFixed(2)} kg/day</li>
+                            <li>Hydrogen Price: ₹${baseAnalysis.hydrogen_price_per_kg?.toFixed(2)}/kg</li>
+                            <li>Annual Production: ${baseAnalysis.annual_production_tonnes?.toFixed(2)} tonnes</li>
+                            <li>Total CAPEX: ₹${baseAnalysis.total_capex?.toFixed(2)} Cr</li>
+                            <li>ROI: ${baseAnalysis.roi_percentage?.toFixed(2)}%</li>
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '❌ API call succeeded but no base_analysis found';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

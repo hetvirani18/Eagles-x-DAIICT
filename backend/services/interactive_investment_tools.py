@@ -192,26 +192,39 @@ class InteractiveInvestmentTools:
     
     async def comprehensive_location_analysis(self, 
                                             location: Tuple[float, float],
-                                            capacity_kg_day: int = 1000,
+                                            capacity_kg_day: int = None,  # Make optional for dynamic calculation
                                             technology_type: str = "pem",
                                             electricity_source: str = "mixed_renewable") -> Dict:
-        """Run comprehensive analysis combining all modules"""
+        """Run comprehensive analysis combining all modules with DYNAMIC RESOURCE-BASED calculation"""
         
         lat, lng = location
         
-        # Base analysis for financial calculations - using dynamic pricing
-        base_price = 280 + (capacity_kg_day / 10000) * 50  # Scale-based pricing: 280-330 range
-        base_price = max(280, min(350, base_price))  # Bound between 280-350
+        # 🚀 USE DYNAMIC RESOURCE-BASED ECONOMIC CALCULATION
+        from .economic_calculator import analyze_comprehensive_economic_feasibility
         
+        location_data = {'latitude': lat, 'longitude': lng}
+        
+        # Calculate OPTIMAL capacity based on available resources instead of using static values
+        dynamic_analysis = analyze_comprehensive_economic_feasibility(
+            location_data=location_data,
+            electrolyzer_type=technology_type,
+            capacity_kg_day=capacity_kg_day  # This will be calculated dynamically if None
+        )
+        
+        # Extract dynamic results instead of static values
         base_analysis = {
-            'total_capex': 150.0,  # Will be refined by investor calculator
-            'total_annual_opex': 45.0,
-            'hydrogen_price_per_kg': base_price,
-            'annual_production_tonnes': capacity_kg_day * 330 / 1000,
-            'capacity_utilization': 0.85,
-            'roi_percentage': 18.5,
-            'npv_10_years': 85.0,
-            'payback_period_years': 6.2
+            'optimal_capacity_kg_day': dynamic_analysis['summary']['optimal_capacity_kg_day'],
+            'total_capex': dynamic_analysis['summary']['total_investment_crores'],
+            'total_annual_opex': dynamic_analysis['comprehensive_analysis'].total_annual_opex,
+            'hydrogen_price_per_kg': dynamic_analysis['comprehensive_analysis'].lcoh_base,
+            'annual_production_tonnes': dynamic_analysis['summary']['annual_capacity_tonnes'],
+            'capacity_utilization': dynamic_analysis['resource_analysis']['capacity_utilization_percentage'],
+            'roi_percentage': dynamic_analysis['summary']['roi_percentage'],
+            'npv_10_years': dynamic_analysis['comprehensive_analysis'].npv_10_years,
+            'payback_period_years': dynamic_analysis['summary']['payback_years'],
+            'bottleneck_resource': dynamic_analysis['summary']['bottleneck_resource'],
+            'available_water_liters_day': dynamic_analysis['resource_analysis']['available_water_liters_day'],
+            'available_electricity_kwh_day': dynamic_analysis['resource_analysis']['available_electricity_kwh_day']
         }
         
         # Run all advanced analyses
@@ -827,7 +840,7 @@ class InteractiveInvestmentTools:
 
 # Main integration functions
 async def run_complete_investment_analysis(location: Tuple[float, float], 
-                                         capacity_kg_day: int = 1000,
+                                         capacity_kg_day: int = None,  # Allow dynamic calculation
                                          technology_type: str = "pem") -> Dict:
     """Run complete investment analysis with all advanced features"""
     

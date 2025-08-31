@@ -32,19 +32,19 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
   useEffect(() => {
     if (location) {
       fetchComprehensiveAnalysis();
-      fetchInvestmentAlerts();
+      // Don't call fetchInvestmentAlerts here - call it after analysis is complete
     }
   }, [location]);
 
   const fetchComprehensiveAnalysis = async () => {
     try {
-      const response = await fetch('/api/v1/advanced/comprehensive-analysis', {
+      const response = await fetch('http://localhost:8080/api/v1/advanced/comprehensive-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           latitude: location.lat,
           longitude: location.lng,
-          capacity_kg_day: 1000,
+          // Remove hardcoded capacity to allow dynamic calculation
           technology_type: 'pem',
           electricity_source: 'mixed_renewable'
         })
@@ -53,6 +53,8 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
       const data = await response.json();
       if (data.status === 'success') {
         setAnalysisData(data);
+        // Now fetch investment alerts with dynamic capacity
+        await fetchInvestmentAlerts(data);
       }
     } catch (error) {
       console.error('Error fetching comprehensive analysis:', error);
@@ -61,10 +63,13 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
     }
   };
 
-  const fetchInvestmentAlerts = async () => {
+  const fetchInvestmentAlerts = async (analysisDataParam = null) => {
     try {
+      // Use passed analysis data or state analysis data
+      const dataToUse = analysisDataParam || analysisData;
+      const dynamicCapacity = dataToUse?.base_analysis?.optimal_capacity_kg_day || 1000;
       const response = await fetch(
-        `/api/v1/advanced/investment-alerts?latitude=${location.lat}&longitude=${location.lng}&capacity_kg_day=1000`
+        `http://localhost:8080/api/v1/advanced/investment-alerts?latitude=${location.lat}&longitude=${location.lng}&capacity_kg_day=${dynamicCapacity}`
       );
       const data = await response.json();
       if (data.status === 'success') {
@@ -77,7 +82,7 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
 
   const downloadInvestorReport = async () => {
     try {
-      const response = await fetch('/api/v1/advanced/generate-investor-report', {
+      const response = await fetch('http://localhost:8080/api/v1/advanced/generate-investor-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

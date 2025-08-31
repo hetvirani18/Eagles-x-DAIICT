@@ -160,7 +160,7 @@ class ComprehensiveAnalysisResponse(BaseModel):
 
 # API Endpoints
 
-@router.post("/comprehensive-analysis", response_model=ComprehensiveAnalysisResponse)
+@router.post("/comprehensive-analysis")
 async def comprehensive_location_analysis(request: LocationRequest):
     """
     🎯 **Complete Investment Analysis**
@@ -177,19 +177,15 @@ async def comprehensive_location_analysis(request: LocationRequest):
     try:
         location = (request.latitude, request.longitude)
         
-        # Run comprehensive analysis
-        analysis_result = await run_complete_investment_analysis(
+        # Use simplified comprehensive analysis for now
+        from services.simple_comprehensive_analysis import simple_comprehensive_location_analysis
+        analysis_result = await simple_comprehensive_location_analysis(
             location=location,
-            capacity_kg_day=request.capacity_kg_day,
+            capacity_kg_day=None,  # Force dynamic calculation
             technology_type=request.technology_type
         )
         
-        response = ComprehensiveAnalysisResponse(
-            status="success",
-            **analysis_result
-        )
-        
-        return response
+        return analysis_result
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")

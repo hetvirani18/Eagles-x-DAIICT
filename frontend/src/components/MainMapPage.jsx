@@ -12,6 +12,7 @@ const MainMapPage = () => {
   const navigate = useNavigate();
   const [searchLocation, setSearchLocation] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [loadingDynamicData, setLoadingDynamicData] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,17 +28,93 @@ const MainMapPage = () => {
     optimalLocations
   } = useApiData();
 
-  const handleLocationSelect = (location, locationData, locationType) => {
+  const handleLocationSelect = async (location, locationData, locationType) => {
     setSearchLocation(location);
 
-    // If the nearest location is an optimal location, also select it for details
+    // If the nearest location is an optimal location, fetch dynamic analysis
     if (locationType === 'optimal' && locationData) {
-      setSelectedLocation(locationData);
+      // Fetch dynamic analysis for this location
+      const enrichedLocationData = await fetchDynamicAnalysisForLocation(locationData);
+      setSelectedLocation(enrichedLocationData);
     }
   };
 
-  const handleOptimalLocationSelect = (location) => {
-    setSelectedLocation(location);
+  const handleOptimalLocationSelect = async (location) => {
+    console.log('🎯 Location clicked:', location);
+    console.log('🎯 Location coordinates:', location.location?.latitude, location.location?.longitude);
+    
+    // Show loading immediately
+    setSelectedLocation({
+      ...location,
+      isLoadingDynamicData: true
+    });
+    
+    setLoadingDynamicData(true);
+    console.log('🔄 Starting to fetch dynamic analysis...');
+    
+    // Fetch dynamic analysis for this location
+    const enrichedLocation = await fetchDynamicAnalysisForLocation(location);
+    console.log('✅ Received enriched location:', enrichedLocation);
+    
+    setLoadingDynamicData(false);
+    setSelectedLocation(enrichedLocation);
+  };
+
+  // New function to fetch dynamic analysis for a location
+  const fetchDynamicAnalysisForLocation = async (location) => {
+    try {
+      const lat = location.location?.latitude || location.lat;
+      const lng = location.location?.longitude || location.lng;
+      
+      if (!lat || !lng) return location; // Return original if no coordinates
+      
+      console.log(`🔄 Fetching dynamic analysis for location: ${lat}, ${lng}`);
+      
+      const payload = {
+        latitude: lat,
+        longitude: lng,
+        technology_type: "pem",
+        electricity_source: "mixed_renewable",
+      };
+      console.log('📤 Sending payload:', payload);
+      
+      const response = await fetch("http://localhost:8080/api/v1/advanced/comprehensive-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const dynamicData = await response.json();
+      console.log('📊 Dynamic data received:', dynamicData);
+      console.log('📊 Base analysis data:', dynamicData.base_analysis);
+      
+      if (dynamicData.status === "success" && dynamicData.base_analysis) {
+        const baseAnalysis = dynamicData.base_analysis;
+        console.log('📊 Key values - Price:', baseAnalysis.hydrogen_price_per_kg, 'Capacity:', baseAnalysis.optimal_capacity_kg_day, 'Production:', baseAnalysis.annual_production_tonnes);
+        
+        // Enrich the location with dynamic production metrics
+        const enrichedLocation = {
+          ...location,
+          production_metrics: {
+            projected_cost_per_kg: parseFloat(baseAnalysis.hydrogen_price_per_kg?.toFixed(2)) || 350,
+            annual_capacity_mt: parseFloat((baseAnalysis.annual_production_tonnes || 25).toFixed(3)), // Keep in tonnes as MT
+            payback_period_years: baseAnalysis.payback_period_years?.toFixed(1) || "N/A",
+            roi_percentage: baseAnalysis.roi_percentage?.toFixed(2) || "N/A",
+            optimal_capacity_kg_day: parseFloat(baseAnalysis.optimal_capacity_kg_day?.toFixed(2)) || 1000,
+            total_capex: parseFloat(baseAnalysis.total_capex?.toFixed(2)) || 25000
+          },
+          dynamic_analysis: dynamicData // Store full dynamic analysis for detailed view
+        };
+        
+        console.log('✅ Enriched location:', enrichedLocation);
+        console.log('✅ Production metrics created:', enrichedLocation.production_metrics);
+        return enrichedLocation;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching dynamic analysis:', error);
+    }
+    
+    return location; // Return original location if API call fails
   };
 
   const handleViewFullAnalysis = (loc) => {

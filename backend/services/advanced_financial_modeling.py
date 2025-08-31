@@ -306,10 +306,7 @@ class AdvancedFinancialModeler:
             percentile_95_npv=percentile(npv_results, 95),
             mean_roi=mean(roi_results),
             probability_roi_above_15=roi_above_15 / len(roi_results),
-            risk_adjusted_return=mean(roi_results) / std(roi_results) if std(roi_results) > 0 else 0,
-            roi_p10=percentile(roi_results, 10),
-            roi_p90=percentile(roi_results, 90),
-            risk_level="Low" if std(roi_results) < 5 else "Medium" if std(roi_results) < 10 else "High"
+            risk_adjusted_return=mean(roi_results) / std(roi_results) if std(roi_results) > 0 else 0
         )
     
     def analyze_financing_options(self, base_analysis: dict) -> Dict[FinancingType, dict]:

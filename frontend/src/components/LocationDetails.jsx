@@ -14,6 +14,7 @@ import {
   Zap,
   Droplets,
   Route,
+  Loader2,
 } from "lucide-react";
 import { toNumber } from "../lib/numeric";
 import {
@@ -48,12 +49,21 @@ const LocationDetails = ({
 
   // Calculate score using shared scoring utility
   const overallScore = calculateLocationScore(location);
+  
+  // Check if we're loading dynamic data
+  const isLoadingDynamicData = location.isLoadingDynamicData || (!location.production_metrics && !location.dynamic_analysis);
+  
+  // Use dynamic data if available, otherwise fall back to static data
   const productionMetrics = location.production_metrics || {
-    projected_cost_per_kg: location.projectedCost || 350,
-    annual_capacity_mt: location.annualCapacity || 25,
-    payback_period_years: location.payback_period_years || "N/A",
-    roi_percentage: location.roi_percentage || "N/A",
+    projected_cost_per_kg: 350, // Static fallback
+    annual_capacity_mt: 25, // Static fallback  
+    payback_period_years: "N/A",
+    roi_percentage: "N/A",
   };
+
+  console.log('🔍 LocationDetails - location:', location);
+  console.log('🔍 LocationDetails - productionMetrics:', productionMetrics);
+  console.log('🔍 LocationDetails - isLoadingDynamicData:', isLoadingDynamicData);
 
   const coordinates = location.location
     ? [location.location.latitude, location.location.longitude]
@@ -254,7 +264,11 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-blue-900">
-                ₹{productionMetrics.projected_cost_per_kg || "N/A"}
+                {isLoadingDynamicData ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  `₹${productionMetrics.projected_cost_per_kg || "N/A"}`
+                )}
               </p>
             </div>
 
@@ -266,9 +280,11 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-green-900">
-                {productionMetrics.annual_capacity_mt?.toLocaleString() ||
-                  "N/A"}{" "}
-                MT
+                {isLoadingDynamicData ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  `${productionMetrics.annual_capacity_mt?.toLocaleString() || "N/A"} MT`
+                )}
               </p>
             </div>
 
@@ -280,7 +296,11 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-purple-900">
-                {productionMetrics.payback_period_years || "N/A"} years
+                {isLoadingDynamicData ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  `${productionMetrics.payback_period_years || "N/A"} years`
+                )}
               </p>
             </div>
 
@@ -292,7 +312,11 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-orange-900">
-                {productionMetrics.roi_percentage || "N/A"}%
+                {isLoadingDynamicData ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  `${productionMetrics.roi_percentage || "N/A"}%`
+                )}
               </p>
             </div>
           </div>

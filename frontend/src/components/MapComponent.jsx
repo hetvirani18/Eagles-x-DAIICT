@@ -392,16 +392,13 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect, onVi
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Projected Cost:</span>
-                    <span className="text-sm font-medium">
-                      ₹{location.production_metrics?.projected_cost_per_kg}/kg
+                    <span className="text-sm text-gray-600">Coordinates:</span>
+                    <span className="text-xs text-gray-500">
+                      {location.location.latitude.toFixed(4)}, {location.location.longitude.toFixed(4)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Capacity:</span>
-                    <span className="text-sm font-medium">
-                      {location.production_metrics?.annual_capacity_mt.toLocaleString()} MT/year
-                    </span>
+                  <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border">
+                    💡 Click "View Analysis" to get real-time cost calculations & production metrics
                   </div>
                 </div>
                 <Button
@@ -410,7 +407,7 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect, onVi
                   onClick={() => onViewFullAnalysis ? onViewFullAnalysis(location) : handleOptimalLocationClick(location)}
                 >
                   <MapPin className="w-3 h-3 mr-1" />
-                  View Full Analysis
+                  View Dynamic Analysis
                 </Button>
               </div>
             </Popup>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Dynamic API</title>
+</head>
+<body>
+    <h1>Test Dynamic API Connection</h1>
+    <button onclick="testAPI()">Test Different Locations</button>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing API...</p>';
+            
+            const locations = [
+                {name: 'Location 1', lat: 21.5720, lng: 73.1400},
+                {name: 'Location 2', lat: 22.3080, lng: 69.6120},
+                {name: 'Location 3', lat: 23.0440, lng: 70.6200}
+            ];
+            
+            let html = '<h2>API Test Results:</h2>';
+            
+            for (const loc of locations) {
+                try {
+                    console.log(`Testing ${loc.name}: ${loc.lat}, ${loc.lng}`);
+                    
+                    const response = await fetch("http://localhost:8080/api/v1/advanced/comprehensive-analysis", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            latitude: loc.lat,
+                            longitude: loc.lng,
+                            technology_type: "pem",
+                            electricity_source: "mixed_renewable",
+                        }),
+                    });
+                    
+                    const data = await response.json();
+                    console.log(`${loc.name} response:`, data);
+                    
+                    if (data.status === "success" && data.base_analysis) {
+                        const base = data.base_analysis;
+                        html += `
+                            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                                <h3>${loc.name} (${loc.lat}, ${loc.lng})</h3>
+                                <p><strong>Optimal Capacity:</strong> ${base.optimal_capacity_kg_day.toFixed(2)} kg/day</p>
+                                <p><strong>Annual Production:</strong> ${base.annual_production_tonnes.toFixed(2)} tonnes</p>
+                                <p><strong>Hydrogen Price:</strong> ₹${base.hydrogen_price_per_kg}/kg</p>
+                                <p><strong>ROI:</strong> ${base.roi_percentage.toFixed(2)}%</p>
+                                <p><strong>Total CAPEX:</strong> ₹${base.total_capex.toFixed(2)} Cr</p>
+                            </div>
+                        `;
+                    } else {
+                        html += `<p><strong>${loc.name}:</strong> API Error</p>`;
+                    }
+                } catch (error) {
+                    console.error(`Error testing ${loc.name}:`, error);
+                    html += `<p><strong>${loc.name}:</strong> Error - ${error.message}</p>`;
+                }
+            }
+            
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

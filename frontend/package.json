@@ -61,6 +61,7 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.4"
   },
+  "proxy": "http://localhost:8080",
   "scripts": {
     "start": "craco start",
     "dev": "craco start",
