@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Card,
@@ -62,6 +62,8 @@ import {
   Pie,
 } from "recharts";
 import { toNumber } from "../lib/numeric";
+import { exportPDF, captureElement } from "../utils/pdfExporter";
+import { exportCSV } from "../utils/csvExporter";
 import {
   calculateLocationScore,
   getScoreColor,
@@ -75,6 +77,27 @@ const FullAnalysisPage = () => {
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Refs for PDF capture sections
+  const refKeyMetrics = useRef(null);
+  const refResourceAllocation = useRef(null);
+  const refCapexOpex = useRef(null);
+  const refCapexCard = useRef(null);
+  const refOpexCard = useRef(null);
+  const refCostProjection = useRef(null);
+  const refRevenuePricing = useRef(null); // grid (kept for fallback)
+  const refRevenueStreams = useRef(null);
+  const refPricingModel = useRef(null);
+  const refRoiChart = useRef(null);
+  const refProjKpis = useRef(null);
+  const refFinancialProjection = useRef(null);
+  const refRisk = useRef(null);
+  // Refs for full tab pages
+  const refTabOverview = useRef(null);
+  const refTabInfrastructure = useRef(null);
+  const refTabCosts = useRef(null);
+  const refTabRevenue = useRef(null);
+  const refTabProjections = useRef(null);
 
   const selectedLocation = locationState?.state?.location || null;
 
@@ -313,18 +336,86 @@ const FullAnalysisPage = () => {
     window.print();
   };
 
-  const handleExportPDF = () => {
-    // Add a print-friendly class to the body
-    document.body.classList.add('print-mode');
-    
-    // Trigger browser's print dialog which can save as PDF
-    setTimeout(() => {
-      window.print();
-      // Remove the class after printing
-      setTimeout(() => {
-        document.body.classList.remove('print-mode');
-      }, 1000);
-    }, 100);
+  const handleExportPDF = async () => {
+    try {
+      const riskLevel = overallScore >= 200 ? "Low" : overallScore >= 150 ? "Moderate" : "High";
+  const sections = [];
+
+      // helper to wait for a frame and small delay to allow charts to render
+      const waitForRender = () => new Promise((resolve) => {
+        requestAnimationFrame(() => setTimeout(resolve, 200));
+      });
+
+      const originalTab = activeTab;
+      
+  // Overview (full tab)
+  setActiveTab('overview');
+  await waitForRender();
+  const overviewUrl = await captureElement(refTabOverview.current);
+  if (overviewUrl) sections.push({ key: 'tab-overview', dataUrl: overviewUrl, title: 'Overview', subtitle: 'Location details, scores, and summaries' });
+
+  // Infrastructure (full tab)
+  setActiveTab('infrastructure');
+  await waitForRender();
+  const infraFullUrl = await captureElement(refTabInfrastructure.current);
+  if (infraFullUrl) sections.push({ key: 'tab-infrastructure', dataUrl: infraFullUrl, title: 'Infrastructure', subtitle: 'Transport, power, and water infrastructure' });
+
+  // Costs (full tab)
+  setActiveTab('costs');
+  await waitForRender();
+  const costsUrl = await captureElement(refTabCosts.current);
+  if (costsUrl) sections.push({ key: 'tab-costs', dataUrl: costsUrl, title: 'Cost Analysis', subtitle: 'CAPEX, OPEX, and cost projections' });
+
+  // Revenue (full tab)
+  setActiveTab('revenue');
+  await waitForRender();
+  const revenueUrl = await captureElement(refTabRevenue.current);
+  if (revenueUrl) sections.push({ key: 'tab-revenue', dataUrl: revenueUrl, title: 'Revenue Model', subtitle: 'Revenue streams, pricing, and ROI' });
+
+  // Financial Projections (full tab)
+  setActiveTab('projections');
+  await waitForRender();
+  const projUrl = await captureElement(refTabProjections.current);
+  if (projUrl) sections.push({ key: 'tab-projections', dataUrl: projUrl, title: 'Financial Projections', subtitle: 'KPIs, 20-year projections, and risk' });
+
+      // Restore original tab
+      if (originalTab) {
+        setActiveTab(originalTab);
+        await waitForRender();
+      }
+
+      await exportPDF({
+        sections,
+        meta: {
+          locationName: selectedLocation?.name || selectedLocation?.title || 'Selected Location',
+          coords: Array.isArray(coordinates) ? `${coordinates[0]}, ${coordinates[1]}` : '',
+          overallScore,
+          riskLevel,
+        },
+        filename: `H2-Optimize-Report-${new Date().toISOString().split('T')[0]}.pdf`,
+      });
+    } catch (err) {
+      console.error('Failed to export PDF', err);
+  alert('Failed to export PDF. Please try again.');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const riskLevel = overallScore >= 200 ? "Low" : overallScore >= 150 ? "Moderate" : "High";
+    exportCSV({
+      meta: {
+        locationName: selectedLocation?.name || selectedLocation?.title || 'Selected Location',
+        coords: Array.isArray(coordinates) ? `${coordinates[0]}, ${coordinates[1]}` : '',
+        overallScore,
+        riskLevel,
+      },
+      datasets: {
+        resourceAllocation: resourceAllocationData,
+        costProjection: costProjectionData,
+        roi: roiData,
+        financial: financialProjectionData,
+      },
+    });
   };
 
   // Prepare datasets for charts
@@ -400,6 +491,10 @@ const FullAnalysisPage = () => {
                     <Download className="w-4 h-4 mr-2" />
                     Export as JSON
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportCSV}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export as CSV
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handlePrintReport}>
                     <Download className="w-4 h-4 mr-2" />
                     Print Report
@@ -419,7 +514,7 @@ const FullAnalysisPage = () => {
       <main className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Key Metrics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div ref={refKeyMetrics} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -505,10 +600,10 @@ const FullAnalysisPage = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="infrastructure" className="space-y-6">
+            <TabsContent ref={refTabInfrastructure} value="infrastructure" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Transportation Infrastructure */}
-                <Card>
+                <Card ref={refCapexCard}>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <MapPin className="w-5 h-5" />
@@ -616,7 +711,7 @@ const FullAnalysisPage = () => {
                 </Card>
 
                 {/* Power Infrastructure */}
-                <Card>
+                <Card ref={refOpexCard}>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Zap className="w-5 h-5" />
@@ -777,7 +872,7 @@ const FullAnalysisPage = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="overview" className="space-y-6">
+            <TabsContent ref={refTabOverview} value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
@@ -1110,7 +1205,7 @@ const FullAnalysisPage = () => {
               </div>
 
               {/* Cost Breakdown Chart */}
-              <Card>
+              <Card ref={refResourceAllocation}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PieChart className="w-5 h-5" />
@@ -1132,8 +1227,7 @@ const FullAnalysisPage = () => {
                           outerRadius={100}
                           paddingAngle={5}
                           dataKey="value"
-                          animationBegin={0}
-                          animationDuration={1500}
+                          isAnimationActive={false}
                         >
                           {resourceAllocationData.map((entry, index) => (
                             <Cell
@@ -1231,8 +1325,8 @@ const FullAnalysisPage = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="costs" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent ref={refTabCosts} value="costs" className="space-y-6">
+              <div ref={refCapexOpex} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>CAPEX Breakdown</CardTitle>
@@ -1303,7 +1397,7 @@ const FullAnalysisPage = () => {
               </div>
 
               {/* Cost vs Time Chart */}
-              <Card>
+              <Card ref={refCostProjection}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <LineChart className="w-5 h-5" />
@@ -1329,14 +1423,14 @@ const FullAnalysisPage = () => {
                           ]}
                         />
                         <Legend />
-                        <Line
+                        <Line isAnimationActive={false}
                           type="monotone"
                           dataKey="cost"
                           stroke="#3B82F6"
                           strokeWidth={2}
                           name="cost"
                         />
-                        <Line
+                        <Line isAnimationActive={false}
                           type="monotone"
                           dataKey="cumulativeSavings"
                           stroke="#10B981"
@@ -1356,9 +1450,9 @@ const FullAnalysisPage = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="revenue" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
+            <TabsContent ref={refTabRevenue} value="revenue" className="space-y-6">
+              <div ref={refRevenuePricing} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card ref={refRevenueStreams}>
                   <CardHeader>
                     <CardTitle>Revenue Streams</CardTitle>
                     <CardDescription>
@@ -1392,7 +1486,7 @@ const FullAnalysisPage = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card ref={refPricingModel}>
                   <CardHeader>
                     <CardTitle>Pricing Model</CardTitle>
                     <CardDescription>
@@ -1425,7 +1519,7 @@ const FullAnalysisPage = () => {
               </div>
 
               {/* Revenue Projection Chart */}
-              <Card>
+              <Card ref={refRoiChart}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="w-5 h-5" />
@@ -1446,7 +1540,7 @@ const FullAnalysisPage = () => {
                           formatter={(value) => [`${value}%`, "Cumulative ROI"]}
                         />
                         <Legend />
-                        <Bar dataKey="roi" fill="#3B82F6" name="roi" />
+                        <Bar isAnimationActive={false} dataKey="roi" fill="#3B82F6" name="roi" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1460,8 +1554,8 @@ const FullAnalysisPage = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="projections" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <TabsContent ref={refTabProjections} value="projections" className="space-y-6">
+              <div ref={refProjKpis} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1534,7 +1628,7 @@ const FullAnalysisPage = () => {
               </div>
 
               {/* Financial Projections Chart */}
-              <Card>
+              <Card ref={refFinancialProjection}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <LineChart className="w-5 h-5" />
@@ -1554,28 +1648,28 @@ const FullAnalysisPage = () => {
                         <YAxis />
                         <Tooltip formatter={(value) => [`₹${value} Cr`, ""]} />
                         <Legend />
-                        <Line
+                        <Line isAnimationActive={false}
                           type="monotone"
                           dataKey="revenue"
                           stroke="#10B981"
                           strokeWidth={2}
                           name="Revenue"
                         />
-                        <Line
+                        <Line isAnimationActive={false}
                           type="monotone"
                           dataKey="opex"
                           stroke="#EF4444"
                           strokeWidth={2}
                           name="Operating Expenses"
                         />
-                        <Line
+                        <Line isAnimationActive={false}
                           type="monotone"
                           dataKey="profit"
                           stroke="#3B82F6"
                           strokeWidth={2}
                           name="Profit"
                         />
-                        <Line
+                        <Line isAnimationActive={false}
                           type="monotone"
                           dataKey="cumulativeCashFlow"
                           stroke="#8B5CF6"
@@ -1605,7 +1699,7 @@ const FullAnalysisPage = () => {
               </Card>
 
               {/* Risk Analysis */}
-              <Card>
+              <Card ref={refRisk}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="w-5 h-5" />
