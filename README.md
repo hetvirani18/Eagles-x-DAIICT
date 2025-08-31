@@ -108,7 +108,7 @@ npm start
 
 ### Backend (FastAPI)
 
-- **Modern Python 3.13** async/await patterns
+- **Modern Pyth on 3.13** async/await patterns
 - **MongoDB** with Motor async driver
 - **Pydantic v2** for data validation
 - **CORS enabled** for frontend integration
