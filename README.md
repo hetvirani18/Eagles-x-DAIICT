@@ -245,7 +245,7 @@ WDS_SOCKET_PORT=0
 
 Note: These files are example outputs produced by the export feature for any selected hydrogen plant location. They include real, computed metrics for each plant, calculated by high-end algorithms in real time on screen, and demonstrate what your exported CSV/JSON/PDF reports will look like.
 
-- [Project Demo Video](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/demo.mp4) - Visual walkthrough of key features
+- [Project Demo Video](https://youtu.be/eut7-v6nJRE?si=w95-vQR0e88VPGsf) - Visual walkthrough of key features
 - [Calculated Dataset CSV](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/H2-Optimize-Analysis-2025-08-31.csv) - Detailed System Dataset
 - [Calculated Dataset For Investment JSON](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/investment-analysis-report-2025-08-31.json) - In Depth detailed dataset for Investment
 - [Calculated Dataset/Charts PDF](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/H2-eagles.pdf) - Financial assessment end to end pdf.
