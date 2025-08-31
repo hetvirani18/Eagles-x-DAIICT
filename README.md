@@ -1,6 +1,5 @@
-# 🌿 H₂-Optimize: Green Hydrogen Infrastructure Mapping and Optimization
+#  H₂-Optimize: Green Hydrogen Infrastructure Mapping and Optimization
 
-![H₂-Optimize Banner](https://github.com/hetvirani18/Eag## 🛠️ Tech Stack &### 🗺️ Interactive M### 📱 User Experiencep ExperienceLibrarieses-x-DAIICT/blob/main/public/banner.png)
 
 ## 📝 Problem Statement
 
