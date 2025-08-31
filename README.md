@@ -35,12 +35,12 @@ uvicorn server:app --host 0.0.0.0 --port 8080 --reload
 ```bash
 cd frontend
 npm install --legacy-peer-deps
-PORT=3001 npm start
+npm start
 ```
 
 ## 🌐 Access Points
 
-- **Frontend**: http://localhost:3001
+- **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8080  
 - **API Documentation**: http://localhost:8080/docs
 
@@ -108,8 +108,8 @@ Create `.env` files in both backend and frontend directories:
 
 **Backend (.env)**
 ```env
-MONGODB_URL=mongodb://localhost:27017
-DATABASE_NAME=h2_optimize
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=h2_optimize
 ```
 
 **Frontend (.env)**  
@@ -120,18 +120,27 @@ WDS_SOCKET_PORT=0
 
 ## 📝 API Endpoints
 
-- `GET /api/energy-sources` - Get renewable energy sources
-- `GET /api/demand-centers` - Get industrial demand centers  
-- `GET /api/water-sources` - Get water infrastructure
-- `GET /api/optimal-locations` - Get optimized facility locations
-- More endpoints available in API docs at `/docs`
+- `GET /api/energy-sources` - Renewable energy sources
+- `GET /api/demand-centers` - Industrial demand centers  
+- `GET /api/water-sources` - Water infrastructure
+- `GET /api/water-bodies` - Water bodies
+- `GET /api/gas-pipelines` - Gas pipeline networks
+- `GET /api/road-networks` - Road transportation networks
+- `GET /api/cities?q=` - City search (autocomplete)
+- `GET /api/optimal-locations` - Algorithmic optimal locations (grid-based)
+- `POST /api/analyze-location` - Analyze a single location
+- `POST /api/calculate-optimal-locations` - Grid search within bounds
+- New infra: `GET /api/pipelines`, `GET /api/storage-facilities`, `GET /api/distribution-hubs`
+- Advanced: `/api/v1/advanced/*` (comprehensive analysis, comparisons, capacity optimization, financial modeling)
+- More details in API docs at `/docs`
 
 ## 🎯 Project Goals
 
 Optimize green hydrogen production facility placement by analyzing:
+
 - **Renewable energy availability** (solar/wind)
 - **Industrial demand proximity** (refineries, ports, chemical plants)
-- **Water resource accessibility** 
+- **Water resource accessibility**
 - **Transportation infrastructure**
 - **Economic viability factors**
 
