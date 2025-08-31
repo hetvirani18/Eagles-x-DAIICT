@@ -1064,11 +1064,37 @@ const FullAnalysisPage = () => {
                           ))}
                         </Pie>
                         <Tooltip
-                          content={({ active, payload }) => {
+                          content={({ active, payload, coordinate }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
                               return (
-                                <div className="bg-white p-3 shadow-lg rounded-lg border">
+                                <div
+                                  className="bg-white p-3 shadow-lg rounded-lg border absolute pointer-events-none"
+                                  style={{
+                                    opacity: 0,
+                                    transform: "scale(0.95)",
+                                    transition:
+                                      "all 0.1s cubic-bezier(0.4, 0, 0.2, 1)",
+                                    animation: active
+                                      ? "tooltip-pop 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards"
+                                      : "none",
+                                    top: coordinate.y - 120, // Position above the cursor
+                                    left: coordinate.x - 100, // Center horizontally
+                                    willChange: "transform, opacity",
+                                  }}
+                                >
+                                  <style>{`
+                                    @keyframes tooltip-pop {
+                                      0% {
+                                        opacity: 0;
+                                        transform: scale(0.95);
+                                      }
+                                      100% {
+                                        opacity: 1;
+                                        transform: scale(1);
+                                      }
+                                    }
+                                  `}</style>
                                   <p className="font-medium text-sm">
                                     {data.name}
                                   </p>
