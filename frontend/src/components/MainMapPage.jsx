@@ -7,11 +7,14 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Layers, Info, Star, Factory, Droplets, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
 import { useApiData } from '../hooks/useApiData';
+import { advancedAnalysisAPI } from '../services/api';
 
 const MainMapPage = () => {
   const navigate = useNavigate();
   const [searchLocation, setSearchLocation] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [locationAnalysisData, setLocationAnalysisData] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,8 +39,24 @@ const MainMapPage = () => {
     }
   };
 
-  const handleOptimalLocationSelect = (location) => {
+  const handleOptimalLocationSelect = async (location) => {
     setSelectedLocation(location);
+    setLocationAnalysisData(null);
+    
+    // Fetch dynamic analysis data for the selected location
+    if (location && (location.latitude || location.lat) && (location.longitude || location.lng)) {
+      setAnalysisLoading(true);
+      try {
+        const response = await advancedAnalysisAPI.comprehensiveAnalysis(location);
+        if (response.data && response.data.status === 'success') {
+          setLocationAnalysisData(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching location analysis:', error);
+      } finally {
+        setAnalysisLoading(false);
+      }
+    }
   };
 
   const handleViewFullAnalysis = (loc) => {
@@ -48,6 +67,8 @@ const MainMapPage = () => {
   const clearSearch = () => {
     setSearchLocation(null);
     setSelectedLocation(null);
+    setLocationAnalysisData(null);
+    setAnalysisLoading(false);
   };
 
   return (
@@ -291,6 +312,8 @@ const MainMapPage = () => {
                   <CardContent className="pt-3 h-[calc(100%-4rem)] overflow-y-auto">
                     <LocationDetails
                       location={selectedLocation}
+                      analysisData={locationAnalysisData}
+                      loading={analysisLoading}
                       onClose={() => setSelectedLocation(null)}
                       embedded={true}
                       resources={{
@@ -371,6 +394,8 @@ const MainMapPage = () => {
             <div className="max-h-[calc(55vh-4rem)] overflow-y-auto p-4">
               <LocationDetails
                 location={selectedLocation}
+                analysisData={locationAnalysisData}
+                loading={analysisLoading}
                 onClose={() => setSelectedLocation(null)}
                 embedded={true}
                 resources={{

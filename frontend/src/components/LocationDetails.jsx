@@ -14,6 +14,7 @@ import {
   Zap,
   Droplets,
   Route,
+  Loader2,
 } from "lucide-react";
 import { toNumber } from "../lib/numeric";
 import {
@@ -25,6 +26,8 @@ import {
 
 const LocationDetails = ({
   location,
+  analysisData,
+  loading = false,
   onClose,
   onViewFullAnalysis,
   embedded = false,
@@ -48,16 +51,45 @@ const LocationDetails = ({
 
   // Calculate score using shared scoring utility
   const overallScore = calculateLocationScore(location);
-  const productionMetrics = location.production_metrics || {
-    projected_cost_per_kg: location.projectedCost || 350,
-    annual_capacity_mt: location.annualCapacity || 25,
-    payback_period_years: location.payback_period_years || "N/A",
-    roi_percentage: location.roi_percentage || "N/A",
-  };
+  
+  // Use dynamic analysis data when available, otherwise fall back to static values
+  const productionMetrics = (() => {
+    if (analysisData && analysisData.base_analysis) {
+      const baseAnalysis = analysisData.base_analysis;
+      return {
+        projected_cost_per_kg: baseAnalysis.hydrogen_price_per_kg || 350,
+        annual_capacity_mt: (baseAnalysis.annual_production_tonnes || 25),
+        payback_period_years: baseAnalysis.payback_period_years || "N/A",
+        roi_percentage: baseAnalysis.roi_percentage || "N/A",
+        optimal_capacity_kg_day: baseAnalysis.optimal_capacity_kg_day,
+        total_capex: baseAnalysis.total_capex
+      };
+    }
+    // Fallback to static values if no dynamic data
+    return location.production_metrics || {
+      projected_cost_per_kg: location.projectedCost || 350,
+      annual_capacity_mt: location.annualCapacity || 25,
+      payback_period_years: location.payback_period_years || "N/A",
+      roi_percentage: location.roi_percentage || "N/A",
+    };
+  })();
 
   const coordinates = location.location
     ? [location.location.latitude, location.location.longitude]
     : location.coordinates || [0, 0];
+
+  // Helper function to show loading state for individual metrics
+  const MetricValue = ({ value, suffix = "", loading: metricLoading = loading }) => {
+    if (metricLoading) {
+      return (
+        <div className="flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        </div>
+      );
+    }
+    return <span>{value || "N/A"}{suffix}</span>;
+  };
 
   // Haversine distance (km)
   const haversineKm = (lat1, lon1, lat2, lon2) => {
@@ -254,7 +286,7 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-blue-900">
-                ₹{productionMetrics.projected_cost_per_kg || "N/A"}
+                ₹<MetricValue value={productionMetrics.projected_cost_per_kg} />
               </p>
             </div>
 
@@ -266,9 +298,10 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-green-900">
-                {productionMetrics.annual_capacity_mt?.toLocaleString() ||
-                  "N/A"}{" "}
-                MT
+                <MetricValue 
+                  value={productionMetrics.annual_capacity_mt?.toLocaleString()} 
+                  suffix=" MT" 
+                />
               </p>
             </div>
 
@@ -280,7 +313,10 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-purple-900">
-                {productionMetrics.payback_period_years || "N/A"} years
+                <MetricValue 
+                  value={productionMetrics.payback_period_years} 
+                  suffix=" years" 
+                />
               </p>
             </div>
 
@@ -292,7 +328,10 @@ const LocationDetails = ({
                 </span>
               </div>
               <p className="text-lg font-bold text-orange-900">
-                {productionMetrics.roi_percentage || "N/A"}%
+                <MetricValue 
+                  value={productionMetrics.roi_percentage} 
+                  suffix="%" 
+                />
               </p>
             </div>
           </div>

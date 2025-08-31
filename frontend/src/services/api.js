@@ -93,6 +93,26 @@ export const distributionAPI = {
   getAll: (type) => apiClient.get('/distribution-hubs', { params: type ? { type } : {} }),
 };
 
+// Advanced Analysis APIs
+export const advancedAnalysisAPI = {
+  comprehensiveAnalysis: (location) =>
+    apiClient.post('/v1/advanced/comprehensive-analysis', {
+      latitude: location.latitude || location.lat,
+      longitude: location.longitude || location.lng,
+      capacity_kg_day: 1000,
+      technology_type: 'pem',
+      electricity_source: 'mixed_renewable'
+    }),
+  dashboardMetrics: (location, capacity_kg_day = 1000) =>
+    apiClient.get('/v1/advanced/dashboard-metrics', {
+      params: {
+        latitude: location.latitude || location.lat,
+        longitude: location.longitude || location.lng,
+        capacity_kg_day
+      }
+    })
+};
+
 // Utility function to handle API errors
 export const handleApiError = (error, context = '') => {
   console.error(`API Error in ${context}:`, error);
