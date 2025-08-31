@@ -14,6 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
   DollarSign,
   TrendingUp,
   AlertTriangle,
@@ -265,6 +271,62 @@ const FullAnalysisPage = () => {
     return data;
   };
 
+  // Export functions
+  const handleExportReport = async () => {
+    try {
+      const reportData = {
+        location: selectedLocation,
+        analysis: analysisData,
+        metrics: {
+          overallScore,
+          productionMetrics,
+          coordinates,
+          costProjectionData,
+          roiData,
+          resourceAllocationData,
+          financialProjectionData
+        },
+        generatedAt: new Date().toISOString()
+      };
+
+      // Create downloadable JSON file
+      const dataStr = JSON.stringify(reportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `investment-analysis-report-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log('Report exported successfully');
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      alert('Failed to export report. Please try again.');
+    }
+  };
+
+  const handlePrintReport = () => {
+    window.print();
+  };
+
+  const handleExportPDF = () => {
+    // Add a print-friendly class to the body
+    document.body.classList.add('print-mode');
+    
+    // Trigger browser's print dialog which can save as PDF
+    setTimeout(() => {
+      window.print();
+      // Remove the class after printing
+      setTimeout(() => {
+        document.body.classList.remove('print-mode');
+      }, 1000);
+    }, 100);
+  };
+
   // Prepare datasets for charts
   const costProjectionData = generateCostProjectionData();
   const roiData = generateROIData();
@@ -326,10 +388,28 @@ const FullAnalysisPage = () => {
                   ? "Moderate"
                   : "High"}
               </Badge>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Export Report
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Report
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportReport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePrintReport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Print Report
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportPDF}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Save as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
