@@ -2,11 +2,10 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { Button } from './ui/button';
 import { Star, MapPin, TrendingUp, DollarSign, Factory, Clock, Percent, Zap, Droplets, Route } from 'lucide-react';
 import { clamp, toNumber } from "../lib/numeric";
 
-const LocationDetails = ({ location, onClose, onViewFullAnalysis, embedded = false, resources }) => {
+const LocationDetails = ({ location, onClose, embedded = false, resources }) => {
   if (!location) return null;
 
   const score = clamp(location?.score ?? location?.investmentScore ?? 0, 0, 100);
@@ -315,22 +314,7 @@ const LocationDetails = ({ location, onClose, onViewFullAnalysis, embedded = fal
           </div>
         )}
 
-        <Separator className="bg-border" />
-
-        {/* View Full Analysis Button */}
-        <div className="pt-2">
-          <Button
-            onClick={onViewFullAnalysis}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            size="lg"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            View Full Analysis
-          </Button>
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            Detailed cost-revenue model, projections, and financial analysis
-          </p>
-        </div>
+  <Separator className="bg-border" />
       </CardContent>
     </>
   );

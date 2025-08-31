@@ -258,6 +258,7 @@ const MainMapPage = () => {
                     searchLocation={searchLocation}
                     selectedLocation={selectedLocation}
                     onLocationSelect={handleOptimalLocationSelect}
+                    onViewFullAnalysis={handleViewFullAnalysis}
                   />
                 </CardContent>
               </Card>
@@ -291,7 +292,6 @@ const MainMapPage = () => {
                     <LocationDetails
                       location={selectedLocation}
                       onClose={() => setSelectedLocation(null)}
-                      onViewFullAnalysis={() => handleViewFullAnalysis(selectedLocation)}
                       embedded={true}
                       resources={{
                         energySources,
@@ -372,7 +372,6 @@ const MainMapPage = () => {
               <LocationDetails
                 location={selectedLocation}
                 onClose={() => setSelectedLocation(null)}
-                onViewFullAnalysis={() => handleViewFullAnalysis(selectedLocation)}
                 embedded={true}
                 resources={{
                   energySources,

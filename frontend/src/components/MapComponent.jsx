@@ -77,7 +77,7 @@ const MarkerWithPopup = memo(({ position, icon, popupContent }) => (
   </Marker>
 ));
 
-const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) => {
+const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect, onViewFullAnalysis }) => {
   const { 
     energySources, 
     demandCenters, 
@@ -403,10 +403,10 @@ const MapComponent = ({ searchLocation, selectedLocation, onLocationSelect }) =>
                     </span>
                   </div>
                 </div>
-                <Button 
-                  size="sm" 
-                  className="mt-3 w-full"
-                  onClick={() => handleOptimalLocationClick(location)}
+                <Button
+                  size="sm"
+                  className="mt-3 w-full bg-amber-700 hover:bg-amber-800 text-white"
+                  onClick={() => onViewFullAnalysis ? onViewFullAnalysis(location) : handleOptimalLocationClick(location)}
                 >
                   <MapPin className="w-3 h-3 mr-1" />
                   View Full Analysis
