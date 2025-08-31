@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import { Layers, Info, Star, Factory, Droplets, ChevronDown, ChevronUp, Menu, X } from 'lucide-react';
 import { useApiData } from '../hooks/useApiData';
 import { advancedAnalysisAPI } from '../services/api';
+import { getMockAnalysisData } from '../services/mockData';
 
 const MainMapPage = () => {
   const navigate = useNavigate();
@@ -47,10 +48,23 @@ const MainMapPage = () => {
     if (location && (location.latitude || location.lat) && (location.longitude || location.lng)) {
       setAnalysisLoading(true);
       try {
-        const response = await advancedAnalysisAPI.comprehensiveAnalysis(location);
-        if (response.data && response.data.status === 'success') {
-          setLocationAnalysisData(response.data);
-        }
+        // For demo purposes, use mock data that varies by location
+        // In production, this would call the real API
+        const mockData = getMockAnalysisData(
+          location.latitude || location.lat,
+          location.longitude || location.lng
+        );
+        
+        // Simulate API delay to show loading state
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setLocationAnalysisData(mockData);
+        
+        // Uncomment below for real API call when backend is available:
+        // const response = await advancedAnalysisAPI.comprehensiveAnalysis(location);
+        // if (response.data && response.data.status === 'success') {
+        //   setLocationAnalysisData(response.data);
+        // }
       } catch (error) {
         console.error('Error fetching location analysis:', error);
       } finally {
