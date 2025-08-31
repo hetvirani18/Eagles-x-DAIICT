@@ -244,10 +244,10 @@ WDS_SOCKET_PORT=0
 
 ## 📚 Resources & Assets
 
-- [Project Demo Video](https://github.com/hetvirani18/Eagles-x-DAIICT/demo.mp4) - Visual walkthrough of key features
-- [Technical Documentation](https://github.com/hetvirani18/Eagles-x-DAIICT/docs/technical_docs.pdf) - Detailed system architecture
-- [Algorithm Explanation](https://github.com/hetvirani18/Eagles-x-DAIICT/ALGORITHM_EXPLANATION.md) - Scoring methodology details
-- [Economic Analysis Model](https://github.com/hetvirani18/Eagles-x-DAIICT/COMPREHENSIVE_ECONOMIC_ANALYSIS.md) - Financial assessment framework
+- [Project Demo Video](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/demo.mp4) - Visual walkthrough of key features
+- [Calculated Dataset CSV](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/H2-Optimize-Analysis-2025-08-31.csv) - Detailed System Dataset
+- [Calculated Dataset For Investment JSON](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/investment-analysis-report-2025-08-31.json) - In Depth detailed dataset for Investment
+- [Calculated Dataset/Charts PDF](https://github.com/hetvirani18/Eagles-x-DAIICT/blob/het/H2-eagles.pdf) - Financial assessment end to end pdf.
 
 ## 👥 Target Users
 

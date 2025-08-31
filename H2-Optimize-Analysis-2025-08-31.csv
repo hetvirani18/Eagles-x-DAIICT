@@ -1,0 +1,62 @@
+Section,Key,Value
+Meta,Location,Selected Location
+Meta,Coordinates,"23.412, 71.124"
+Meta,Viability Score,159
+Meta,Risk Level,Moderate
+
+Resource Allocation
+Name,Percent,Amount (Cr)
+Equipment & Technology,45,45
+Infrastructure,25,25
+Land & Site Development,15,15
+Working Capital,10,10
+Permits & Licenses,5,5
+
+Cost Projections Over Time
+Year,Production Cost (₹/kg),Cumulative Savings (₹/kg)
+Year 1,219.68,4.48
+Year 2,215.19,8.97
+Year 3,210.71,13.45
+Year 4,206.23,17.93
+Year 5,201.74,22.42
+Year 6,197.26,26.9
+Year 7,192.78,31.38
+Year 8,188.29,35.87
+Year 9,183.81,40.35
+Year 10,179.33,44.83
+
+ROI Projections
+Year,Cumulative ROI (%)
+Year 1,35
+Year 2,70
+Year 3,105
+Year 4,140
+Year 5,175
+Year 6,210
+Year 7,245
+Year 8,280
+Year 9,315
+Year 10,350
+
+20-Year Financial Projections
+Year,Revenue (Cr),OPEX (Cr),Profit (Cr),Cumulative Cash Flow (Cr)
+Year 1,153,71,82,-293
+Year 2,158,72,85,-208
+Year 3,162,74,88,-119
+Year 4,167,75,92,-28
+Year 5,171,77,95,67
+Year 6,176,78,98,165
+Year 7,181,80,101,266
+Year 8,185,81,104,370
+Year 9,190,82,107,477
+Year 10,194,84,111,588
+Year 11,199,85,114,701
+Year 12,203,87,117,818
+Year 13,208,88,120,938
+Year 14,213,89,123,1061
+Year 15,217,91,126,1188
+Year 16,222,92,130,1317
+Year 17,226,94,133,1450
+Year 18,231,95,136,1586
+Year 19,236,97,139,1725
+Year 20,240,98,142,1867

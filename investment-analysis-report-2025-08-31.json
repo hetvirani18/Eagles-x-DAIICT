@@ -1,0 +1,397 @@
+{
+  "location": {
+    "location": {
+      "latitude": 23.412,
+      "longitude": 71.124
+    },
+    "overall_score": 2868.3,
+    "infrastructure_score": 4056.9,
+    "economic_score": 95,
+    "overall_grade": "AAA (Prime Investment)",
+    "energy_score": 96.1,
+    "demand_score": 5.8,
+    "water_score": 21.8,
+    "pipeline_score": 2.2,
+    "transport_score": 8.8,
+    "nearest_energy": {
+      "nearest_source": "Charanka Solar Park",
+      "distance_km": 14.67,
+      "type": "Solar",
+      "capacity_mw": 590
+    },
+    "nearest_demand": {
+      "nearest_center": "Kandla Port & SEZ",
+      "distance_km": 104.96,
+      "type": "Port",
+      "demand_mt_year": 25000
+    },
+    "nearest_water": {
+      "nearest_source": "Kutch Groundwater",
+      "distance_km": 137.25,
+      "type": "Groundwater"
+    },
+    "nearest_pipeline": {
+      "nearest_pipeline": "Gujarat Gas Distribution Network",
+      "distance_km": 102.2,
+      "operator": "Gujarat Gas Limited"
+    },
+    "nearest_transport": {
+      "nearest_road": "NH-27 (Porbandar-Silchar Highway)",
+      "distance_km": 59.79,
+      "type": "National Highway",
+      "connectivity_score": 88
+    },
+    "economic_analysis": {
+      "economic_grade": "A+ (Excellent)",
+      "roi_percentage": 0.1,
+      "payback_period_years": 20,
+      "hydrogen_price_per_kg": 209.87499999999997,
+      "electricity_cost_per_kwh": 2.5,
+      "annual_capacity_tonnes": 22602739.726027396,
+      "simplified_calculation": true
+    },
+    "production_metrics": {
+      "capacity_kg_day": 95833.3,
+      "annual_capacity_mt": 28750,
+      "projected_cost_per_kg": 224.16,
+      "payback_period_years": 2.7,
+      "roi_percentage": 35,
+      "capex_crores": 837.58,
+      "annual_revenue_crores": 644.45,
+      "annual_profit_crores": 270.67,
+      "electricity_cost_kwh": 2.3,
+      "production_breakdown": {
+        "electricity_cost_per_kg": 156.28,
+        "water_cost_per_kg": 12,
+        "om_cost_per_kg": 33.66,
+        "margin_percentage": 11
+      },
+      "capacity_constraints": {
+        "electricity_limit_kg_day": 170881.8,
+        "water_limit_kg_day": 50000000,
+        "market_demand_kg_day": 83333.3,
+        "limiting_factor": "market"
+      },
+      "dynamic_calculation": true
+    },
+    "selection_method": "algorithmic_grid_analysis",
+    "analysis_weights": {
+      "energy_weight": 35,
+      "demand_weight": 25,
+      "water_weight": 20,
+      "pipeline_weight": 10,
+      "transport_weight": 10
+    }
+  },
+  "analysis": null,
+  "metrics": {
+    "overallScore": 159,
+    "productionMetrics": {
+      "capacity_kg_day": 95833.3,
+      "annual_capacity_mt": 28750,
+      "projected_cost_per_kg": 224.16,
+      "payback_period_years": 2.7,
+      "roi_percentage": 35,
+      "capex_crores": 837.58,
+      "annual_revenue_crores": 644.45,
+      "annual_profit_crores": 270.67,
+      "electricity_cost_kwh": 2.3,
+      "production_breakdown": {
+        "electricity_cost_per_kg": 156.28,
+        "water_cost_per_kg": 12,
+        "om_cost_per_kg": 33.66,
+        "margin_percentage": 11
+      },
+      "capacity_constraints": {
+        "electricity_limit_kg_day": 170881.8,
+        "water_limit_kg_day": 50000000,
+        "market_demand_kg_day": 83333.3,
+        "limiting_factor": "market"
+      },
+      "dynamic_calculation": true
+    },
+    "coordinates": [
+      23.412,
+      71.124
+    ],
+    "costProjectionData": [
+      {
+        "year": "Year 1",
+        "cost": 219.68,
+        "cumulativeSavings": 4.48
+      },
+      {
+        "year": "Year 2",
+        "cost": 215.19,
+        "cumulativeSavings": 8.97
+      },
+      {
+        "year": "Year 3",
+        "cost": 210.71,
+        "cumulativeSavings": 13.45
+      },
+      {
+        "year": "Year 4",
+        "cost": 206.23,
+        "cumulativeSavings": 17.93
+      },
+      {
+        "year": "Year 5",
+        "cost": 201.74,
+        "cumulativeSavings": 22.42
+      },
+      {
+        "year": "Year 6",
+        "cost": 197.26,
+        "cumulativeSavings": 26.9
+      },
+      {
+        "year": "Year 7",
+        "cost": 192.78,
+        "cumulativeSavings": 31.38
+      },
+      {
+        "year": "Year 8",
+        "cost": 188.29,
+        "cumulativeSavings": 35.87
+      },
+      {
+        "year": "Year 9",
+        "cost": 183.81,
+        "cumulativeSavings": 40.35
+      },
+      {
+        "year": "Year 10",
+        "cost": 179.33,
+        "cumulativeSavings": 44.83
+      }
+    ],
+    "roiData": [
+      {
+        "year": "Year 1",
+        "roi": 35,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 2",
+        "roi": 70,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 3",
+        "roi": 105,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 4",
+        "roi": 140,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 5",
+        "roi": 175,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 6",
+        "roi": 210,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 7",
+        "roi": 245,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 8",
+        "roi": 280,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 9",
+        "roi": 315,
+        "annualROI": 35
+      },
+      {
+        "year": "Year 10",
+        "roi": 350,
+        "annualROI": 35
+      }
+    ],
+    "resourceAllocationData": [
+      {
+        "name": "Equipment & Technology",
+        "value": 45,
+        "color": "#3B82F6",
+        "amount": 45
+      },
+      {
+        "name": "Infrastructure",
+        "value": 25,
+        "color": "#10B981",
+        "amount": 25
+      },
+      {
+        "name": "Land & Site Development",
+        "value": 15,
+        "color": "#F59E0B",
+        "amount": 15
+      },
+      {
+        "name": "Working Capital",
+        "value": 10,
+        "color": "#EF4444",
+        "amount": 10
+      },
+      {
+        "name": "Permits & Licenses",
+        "value": 5,
+        "color": "#8B5CF6",
+        "amount": 5
+      }
+    ],
+    "financialProjectionData": [
+      {
+        "year": "Year 1",
+        "revenue": 153,
+        "opex": 71,
+        "profit": 82,
+        "cumulativeCashFlow": -293
+      },
+      {
+        "year": "Year 2",
+        "revenue": 158,
+        "opex": 72,
+        "profit": 85,
+        "cumulativeCashFlow": -208
+      },
+      {
+        "year": "Year 3",
+        "revenue": 162,
+        "opex": 74,
+        "profit": 88,
+        "cumulativeCashFlow": -119
+      },
+      {
+        "year": "Year 4",
+        "revenue": 167,
+        "opex": 75,
+        "profit": 92,
+        "cumulativeCashFlow": -28
+      },
+      {
+        "year": "Year 5",
+        "revenue": 171,
+        "opex": 77,
+        "profit": 95,
+        "cumulativeCashFlow": 67
+      },
+      {
+        "year": "Year 6",
+        "revenue": 176,
+        "opex": 78,
+        "profit": 98,
+        "cumulativeCashFlow": 165
+      },
+      {
+        "year": "Year 7",
+        "revenue": 181,
+        "opex": 80,
+        "profit": 101,
+        "cumulativeCashFlow": 266
+      },
+      {
+        "year": "Year 8",
+        "revenue": 185,
+        "opex": 81,
+        "profit": 104,
+        "cumulativeCashFlow": 370
+      },
+      {
+        "year": "Year 9",
+        "revenue": 190,
+        "opex": 82,
+        "profit": 107,
+        "cumulativeCashFlow": 477
+      },
+      {
+        "year": "Year 10",
+        "revenue": 194,
+        "opex": 84,
+        "profit": 111,
+        "cumulativeCashFlow": 588
+      },
+      {
+        "year": "Year 11",
+        "revenue": 199,
+        "opex": 85,
+        "profit": 114,
+        "cumulativeCashFlow": 701
+      },
+      {
+        "year": "Year 12",
+        "revenue": 203,
+        "opex": 87,
+        "profit": 117,
+        "cumulativeCashFlow": 818
+      },
+      {
+        "year": "Year 13",
+        "revenue": 208,
+        "opex": 88,
+        "profit": 120,
+        "cumulativeCashFlow": 938
+      },
+      {
+        "year": "Year 14",
+        "revenue": 213,
+        "opex": 89,
+        "profit": 123,
+        "cumulativeCashFlow": 1061
+      },
+      {
+        "year": "Year 15",
+        "revenue": 217,
+        "opex": 91,
+        "profit": 126,
+        "cumulativeCashFlow": 1188
+      },
+      {
+        "year": "Year 16",
+        "revenue": 222,
+        "opex": 92,
+        "profit": 130,
+        "cumulativeCashFlow": 1317
+      },
+      {
+        "year": "Year 17",
+        "revenue": 226,
+        "opex": 94,
+        "profit": 133,
+        "cumulativeCashFlow": 1450
+      },
+      {
+        "year": "Year 18",
+        "revenue": 231,
+        "opex": 95,
+        "profit": 136,
+        "cumulativeCashFlow": 1586
+      },
+      {
+        "year": "Year 19",
+        "revenue": 236,
+        "opex": 97,
+        "profit": 139,
+        "cumulativeCashFlow": 1725
+      },
+      {
+        "year": "Year 20",
+        "revenue": 240,
+        "opex": 98,
+        "profit": 142,
+        "cumulativeCashFlow": 1867
+      }
+    ]
+  },
+  "generatedAt": "2025-08-31T01:58:51.189Z"
+}
