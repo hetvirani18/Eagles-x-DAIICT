@@ -40,9 +40,6 @@ const MainMapPage = () => {
   };
 
   const handleOptimalLocationSelect = async (location) => {
-    console.log('🎯 Location clicked:', location);
-    console.log('🎯 Location coordinates:', location.location?.latitude, location.location?.longitude);
-    
     // Show loading immediately
     setSelectedLocation({
       ...location,
@@ -50,11 +47,9 @@ const MainMapPage = () => {
     });
     
     setLoadingDynamicData(true);
-    console.log('🔄 Starting to fetch dynamic analysis...');
     
     // Fetch dynamic analysis for this location
     const enrichedLocation = await fetchDynamicAnalysisForLocation(location);
-    console.log('✅ Received enriched location:', enrichedLocation);
     
     setLoadingDynamicData(false);
     setSelectedLocation(enrichedLocation);
@@ -66,9 +61,8 @@ const MainMapPage = () => {
       const lat = location.location?.latitude || location.lat;
       const lng = location.location?.longitude || location.lng;
       
-      if (!lat || !lng) return location; // Return original if no coordinates
-      
-      console.log(`🔄 Fetching dynamic analysis for location: ${lat}, ${lng}`);
+      if (!lat || !lng) return { ...location, error: "Missing coordinates" };
+
       
       const payload = {
         latitude: lat,
@@ -76,7 +70,6 @@ const MainMapPage = () => {
         technology_type: "pem",
         electricity_source: "mixed_renewable",
       };
-      console.log('📤 Sending payload:', payload);
       
       const response = await fetch("http://localhost:8080/api/v1/advanced/comprehensive-analysis", {
         method: "POST",
@@ -84,37 +77,39 @@ const MainMapPage = () => {
         body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API request failed:', response.status, response.statusText, errorText);
+        return { ...location, error: `API Error: ${response.statusText}` };
+      }
+
       const dynamicData = await response.json();
-      console.log('📊 Dynamic data received:', dynamicData);
-      console.log('📊 Base analysis data:', dynamicData.base_analysis);
       
-      if (dynamicData.status === "success" && dynamicData.base_analysis) {
-        const baseAnalysis = dynamicData.base_analysis;
-        console.log('📊 Key values - Price:', baseAnalysis.hydrogen_price_per_kg, 'Capacity:', baseAnalysis.optimal_capacity_kg_day, 'Production:', baseAnalysis.annual_production_tonnes);
+      if (dynamicData && dynamicData.summary) {
+        const summary = dynamicData.summary;
         
-        // Enrich the location with dynamic production metrics
         const enrichedLocation = {
           ...location,
           production_metrics: {
-            projected_cost_per_kg: parseFloat(baseAnalysis.hydrogen_price_per_kg?.toFixed(2)) || 350,
-            annual_capacity_mt: parseFloat((baseAnalysis.annual_production_tonnes || 25).toFixed(3)), // Keep in tonnes as MT
-            payback_period_years: baseAnalysis.payback_period_years?.toFixed(1) || "N/A",
-            roi_percentage: baseAnalysis.roi_percentage?.toFixed(2) || "N/A",
-            optimal_capacity_kg_day: parseFloat(baseAnalysis.optimal_capacity_kg_day?.toFixed(2)) || 1000,
-            total_capex: parseFloat(baseAnalysis.total_capex?.toFixed(2)) || 25000
+            projected_cost_per_kg: parseFloat(summary.lcoh_base_per_kg?.toFixed(2)),
+            annual_capacity_mt: parseFloat(summary.annual_capacity_tonnes?.toFixed(3)),
+            payback_period_years: summary.payback_years?.toFixed(1),
+            roi_percentage: summary.roi_percentage?.toFixed(2),
+            optimal_capacity_kg_day: parseFloat(summary.optimal_capacity_kg_day?.toFixed(2)),
+            total_capex: parseFloat(summary.total_investment_crores?.toFixed(2))
           },
-          dynamic_analysis: dynamicData // Store full dynamic analysis for detailed view
+          dynamic_analysis: dynamicData
         };
         
-        console.log('✅ Enriched location:', enrichedLocation);
-        console.log('✅ Production metrics created:', enrichedLocation.production_metrics);
         return enrichedLocation;
+      } else {
+        console.error('API response missing summary object:', dynamicData);
+        return { ...location, error: "Invalid data from server" };
       }
     } catch (error) {
-      console.error('❌ Error fetching dynamic analysis:', error);
+      console.error('Error fetching dynamic analysis:', error);
+      return { ...location, error: "Failed to fetch analysis" };
     }
-    
-    return location; // Return original location if API call fails
   };
 
   const handleViewFullAnalysis = (loc) => {

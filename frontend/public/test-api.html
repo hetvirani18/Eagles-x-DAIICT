@@ -39,20 +39,21 @@
                     const data = await response.json();
                     console.log(`${loc.name} response:`, data);
                     
-                    if (data.status === "success" && data.base_analysis) {
-                        const base = data.base_analysis;
+                    if (data && data.summary) {
+                        const s = data.summary;
                         html += `
                             <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
                                 <h3>${loc.name} (${loc.lat}, ${loc.lng})</h3>
-                                <p><strong>Optimal Capacity:</strong> ${base.optimal_capacity_kg_day.toFixed(2)} kg/day</p>
-                                <p><strong>Annual Production:</strong> ${base.annual_production_tonnes.toFixed(2)} tonnes</p>
-                                <p><strong>Hydrogen Price:</strong> ₹${base.hydrogen_price_per_kg}/kg</p>
-                                <p><strong>ROI:</strong> ${base.roi_percentage.toFixed(2)}%</p>
-                                <p><strong>Total CAPEX:</strong> ₹${base.total_capex.toFixed(2)} Cr</p>
+                                <p><strong>Optimal Capacity:</strong> ${Number(s.optimal_capacity_kg_day).toLocaleString()} kg/day</p>
+                                <p><strong>Annual Capacity:</strong> ${Number(s.annual_capacity_tonnes).toLocaleString()} tonnes/year</p>
+                                <p><strong>LCOH (Base):</strong> ₹${Number(s.lcoh_base_per_kg).toFixed(2)}/kg</p>
+                                <p><strong>ROI:</strong> ${Number(s.roi_percentage).toFixed(2)}%</p>
+                                <p><strong>Total CAPEX:</strong> ₹${Number(s.total_investment_crores).toFixed(2)} Cr</p>
+                                <p><strong>Payback:</strong> ${Number(s.payback_years).toFixed(2)} years</p>
                             </div>
                         `;
                     } else {
-                        html += `<p><strong>${loc.name}:</strong> API Error</p>`;
+                        html += `<p><strong>${loc.name}:</strong> API Error or unexpected response shape</p>`;
                     }
                 } catch (error) {
                     console.error(`Error testing ${loc.name}:`, error);

@@ -28,20 +28,24 @@
                 const data = await response.json();
                 console.log('API Response:', data);
                 
-                if (data.status === "success" && data.base_analysis) {
-                    const baseAnalysis = data.base_analysis;
+                if (data && data.summary && data.comprehensive_analysis) {
+                    const s = data.summary;
+                    const a = data.comprehensive_analysis;
                     resultDiv.innerHTML = `
                         <h3>✅ SUCCESS! Dynamic API is working:</h3>
                         <ul>
-                            <li>Optimal Capacity: ${baseAnalysis.optimal_capacity_kg_day?.toFixed(2)} kg/day</li>
-                            <li>Hydrogen Price: ₹${baseAnalysis.hydrogen_price_per_kg?.toFixed(2)}/kg</li>
-                            <li>Annual Production: ${baseAnalysis.annual_production_tonnes?.toFixed(2)} tonnes</li>
-                            <li>Total CAPEX: ₹${baseAnalysis.total_capex?.toFixed(2)} Cr</li>
-                            <li>ROI: ${baseAnalysis.roi_percentage?.toFixed(2)}%</li>
+                            <li>Optimal Capacity: ${Number(s.optimal_capacity_kg_day).toLocaleString()} kg/day</li>
+                            <li>Annual Capacity: ${Number(s.annual_capacity_tonnes).toLocaleString()} tonnes/year</li>
+                            <li>Total CAPEX: ₹${Number(s.total_investment_crores).toFixed(2)} Cr</li>
+                            <li>Annual Revenue: ₹${Number(s.annual_revenue_crores).toFixed(2)} Cr</li>
+                            <li>Annual Profit: ₹${Number(s.annual_profit_crores).toFixed(2)} Cr</li>
+                            <li>ROI: ${Number(s.roi_percentage).toFixed(2)}%</li>
+                            <li>Payback: ${Number(s.payback_years).toFixed(2)} years</li>
+                            <li>LCOH (Base): ₹${Number(s.lcoh_base_per_kg).toFixed(2)}/kg</li>
                         </ul>
                     `;
                 } else {
-                    resultDiv.innerHTML = '❌ API call succeeded but no base_analysis found';
+                    resultDiv.innerHTML = '❌ API call succeeded but summary/comprehensive_analysis missing';
                 }
             } catch (error) {
                 console.error('Error:', error);

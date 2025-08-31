@@ -175,14 +175,19 @@ async def comprehensive_location_analysis(request: LocationRequest):
     **Returns:** Complete investor-grade analysis report
     """
     try:
-        location = (request.latitude, request.longitude)
+        # Use the full comprehensive economic analysis
+        from services.economic_calculator import analyze_comprehensive_economic_feasibility
         
-        # Use simplified comprehensive analysis for now
-        from services.simple_comprehensive_analysis import simple_comprehensive_location_analysis
-        analysis_result = await simple_comprehensive_location_analysis(
-            location=location,
+        location_data = {
+            "latitude": request.latitude,
+            "longitude": request.longitude
+        }
+        
+        # Run the full analysis, forcing dynamic capacity calculation
+        analysis_result = analyze_comprehensive_economic_feasibility(
+            location_data=location_data,
             capacity_kg_day=None,  # Force dynamic calculation
-            technology_type=request.technology_type
+            electrolyzer_type=request.technology_type
         )
         
         return analysis_result

@@ -691,14 +691,15 @@ class HydrogenLocationOptimizer:
             water_sources[0] if water_sources else None
         )
         
-        # Debug: Print production metrics to see what we're returning
-        print(f"📊 Production Metrics for location {location.latitude:.4f}, {location.longitude:.4f}:")
-        print(f"   Cost per kg: ₹{production_metrics.get('projected_cost_per_kg', 'N/A')}")
-        print(f"   Annual capacity: {production_metrics.get('annual_capacity_mt', 'N/A')} MT")
-        print(f"   Payback period: {production_metrics.get('payback_period_years', 'N/A')} years")
-        print(f"   ROI: {production_metrics.get('roi_percentage', 'N/A')}%")
-        print(f"   Full metrics: {production_metrics}")
-        print("---")
+        # Optional debug: Print production metrics (disabled by default)
+        if False:
+            print(f"📊 Production Metrics for location {location.latitude:.4f}, {location.longitude:.4f}:")
+            print(f"   Cost per kg: ₹{production_metrics.get('projected_cost_per_kg', 'N/A')}")
+            print(f"   Annual capacity: {production_metrics.get('annual_capacity_mt', 'N/A')} MT")
+            print(f"   Payback period: {production_metrics.get('payback_period_years', 'N/A')} years")
+            print(f"   ROI: {production_metrics.get('roi_percentage', 'N/A')}%")
+            print(f"   Full metrics: {production_metrics}")
+            print("---")
         
         # Determine overall grade based on final score
         overall_grade = self._get_overall_grade(overall_score)

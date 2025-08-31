@@ -33,19 +33,7 @@ const LocationDetails = ({
 }) => {
   if (!location) return null;
 
-  const paybackYears = toNumber(
-    location?.paybackYears ?? location?.payback_period_years,
-    0
-  );
-  const costPerKg = toNumber(
-    location?.costPerKg ?? location?.production_cost_per_kg,
-    0
-  );
-  const annualCapacity = toNumber(
-    location?.annualCapacityKg ?? location?.annual_capacity_kg,
-    0
-  );
-  const roiPercent = toNumber(location?.roiPercent ?? location?.roi, 0);
+  // Legacy fields removed; rely solely on dynamic production_metrics
 
   // Calculate score using shared scoring utility
   const overallScore = calculateLocationScore(location);
@@ -53,17 +41,10 @@ const LocationDetails = ({
   // Check if we're loading dynamic data
   const isLoadingDynamicData = location.isLoadingDynamicData || (!location.production_metrics && !location.dynamic_analysis);
   
-  // Use dynamic data if available, otherwise fall back to static data
-  const productionMetrics = location.production_metrics || {
-    projected_cost_per_kg: 350, // Static fallback
-    annual_capacity_mt: 25, // Static fallback  
-    payback_period_years: "N/A",
-    roi_percentage: "N/A",
-  };
+  // Use dynamic data if available, no static fallbacks
+  const productionMetrics = location.production_metrics || {};
 
-  console.log('🔍 LocationDetails - location:', location);
-  console.log('🔍 LocationDetails - productionMetrics:', productionMetrics);
-  console.log('🔍 LocationDetails - isLoadingDynamicData:', isLoadingDynamicData);
+  // No console logging in production UI
 
   const coordinates = location.location
     ? [location.location.latitude, location.location.longitude]

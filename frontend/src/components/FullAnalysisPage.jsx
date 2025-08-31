@@ -92,9 +92,13 @@ const FullAnalysisPage = () => {
     );
   }
 
-  const annualCapacity = toNumber(selectedLocation?.annualCapacityKg, 0);
+  // Dynamic metrics only (no static fallbacks)
+  const annualCapacity = toNumber(
+    analysisData?.summary?.annual_capacity_tonnes,
+    0
+  );
   const roiPct = toNumber(
-    selectedLocation?.roiPercent ?? selectedLocation?.roi,
+    analysisData?.summary?.roi_percentage,
     0
   );
 
@@ -120,8 +124,14 @@ const FullAnalysisPage = () => {
       });
 
       const data = await response.json();
-      if (data.status === "success") {
+      // Backend now returns { summary, comprehensive_analysis, resource_analysis }
+      if (data && (data.summary || data.comprehensive_analysis)) {
         setAnalysisData(data);
+      } else if (data && data.status === "success") {
+        // Backward compatibility with older wrappers
+        setAnalysisData(data);
+      } else {
+        console.error("Unexpected analysis response shape:", data);
       }
     } catch (error) {
       console.error("Error fetching comprehensive analysis:", error);
@@ -136,19 +146,25 @@ const FullAnalysisPage = () => {
     ? [selectedLocation.location.latitude, selectedLocation.location.longitude]
     : selectedLocation.coordinates || [0, 0];
 
-  const productionMetrics = selectedLocation.production_metrics || {
-    projected_cost_per_kg: selectedLocation.projectedCost || 350,
-    annual_capacity_mt: selectedLocation.annualCapacity || 25,
-    payback_period_years: selectedLocation.payback_period_years || "N/A",
-    roi_percentage: selectedLocation.roi_percentage || "N/A",
-  };
+  // Use dynamic analysis data when available, fallback to static data
+  // Map backend summary to UI production metrics, else empty
+  const productionMetrics = analysisData?.summary
+    ? {
+        projected_cost_per_kg: analysisData.summary.lcoh_base_per_kg,
+        annual_capacity_mt: analysisData.summary.annual_capacity_tonnes,
+        payback_period_years: analysisData.summary.payback_years,
+        roi_percentage: analysisData.summary.roi_percentage,
+        total_capex_crores: analysisData.summary.total_investment_crores,
+        annual_revenue_crores: analysisData.summary.annual_revenue_crores,
+      }
+    : {};
 
   // Sanitize numeric metrics to avoid NaN in calculations
   const sanitizedRoi = toNumber(productionMetrics.roi_percentage, 0);
 
   // Generate chart data
   const generateCostProjectionData = () => {
-    const baseCost = productionMetrics.projected_cost_per_kg || 350;
+    const baseCost = toNumber(productionMetrics.projected_cost_per_kg, 0);
     const data = [];
     for (let year = 1; year <= 10; year++) {
       const efficiencyGain = year * 0.02; // 2% annual efficiency improvement
@@ -164,7 +180,7 @@ const FullAnalysisPage = () => {
   };
 
   const generateROIData = () => {
-    const roi = sanitizedRoi || 15;
+    const roi = sanitizedRoi;
     const data = [];
     for (let year = 1; year <= 10; year++) {
       const cumulativeROI = roi * year;
@@ -178,82 +194,72 @@ const FullAnalysisPage = () => {
   };
 
   const generateResourceAllocationData = () => {
-    // Define resource categories and their colors
+    const analysis = analysisData?.comprehensive_analysis;
+    if (!analysis) return [];
+
     const resourceColors = {
       "Equipment & Technology": "#3B82F6",
       Infrastructure: "#10B981",
       "Land & Site Development": "#F59E0B",
-      "Working Capital": "#EF4444",
+      "Project Development": "#EF4444",
       "Permits & Licenses": "#8B5CF6",
     };
 
-    // Get resource allocation from analysis data or use default proportions
-    const resourceAllocation = analysisData?.resource_allocation || {
-      equipment_technology: selectedLocation.equipment_technology_cost || 45,
-      infrastructure: selectedLocation.infrastructure_cost || 25,
-      land_development: selectedLocation.land_development_cost || 15,
-      working_capital: selectedLocation.working_capital || 10,
-      permits_licenses: selectedLocation.permits_licenses_cost || 5,
-    };
+    const equipmentTech = toNumber(analysis.electrolyzer_stack_cost, 0)
+      + toNumber(analysis.electrolyzer_power_supply, 0)
+      + toNumber(analysis.electrolyzer_control_system, 0)
+      + toNumber(analysis.compression_system, 0)
+      + toNumber(analysis.storage_tanks, 0)
+      + toNumber(analysis.purification_equipment, 0)
+      + toNumber(analysis.safety_systems, 0);
 
-    // Calculate total to ensure percentages sum to 100
-    const total = Object.values(resourceAllocation).reduce(
-      (sum, val) => sum + val,
-      0
-    );
+    const infrastructure = toNumber(analysis.plant_construction, 0)
+      + toNumber(analysis.electrical_infrastructure, 0)
+      + toNumber(analysis.water_treatment_plant, 0)
+      + toNumber(analysis.hydrogen_pipeline_connection, 0)
+      + toNumber(analysis.road_access_development, 0)
+      + toNumber(analysis.utility_connections, 0);
 
-    // Create data array with normalized percentages
-    return [
-      {
-        name: "Equipment & Technology",
-        value: Math.round(
-          (resourceAllocation.equipment_technology / total) * 100
-        ),
-        color: resourceColors["Equipment & Technology"],
-        amount: resourceAllocation.equipment_technology,
-      },
-      {
-        name: "Infrastructure",
-        value: Math.round((resourceAllocation.infrastructure / total) * 100),
-        color: resourceColors["Infrastructure"],
-        amount: resourceAllocation.infrastructure,
-      },
-      {
-        name: "Land & Site Development",
-        value: Math.round((resourceAllocation.land_development / total) * 100),
-        color: resourceColors["Land & Site Development"],
-        amount: resourceAllocation.land_development,
-      },
-      {
-        name: "Working Capital",
-        value: Math.round((resourceAllocation.working_capital / total) * 100),
-        color: resourceColors["Working Capital"],
-        amount: resourceAllocation.working_capital,
-      },
-      {
-        name: "Permits & Licenses",
-        value: Math.round((resourceAllocation.permits_licenses / total) * 100),
-        color: resourceColors["Permits & Licenses"],
-        amount: resourceAllocation.permits_licenses,
-      },
+    const landSite = toNumber(analysis.land_acquisition, 0);
+
+    const projectDev = toNumber(analysis.engineering_design, 0)
+      + toNumber(analysis.project_management, 0)
+      + toNumber(analysis.commissioning_testing, 0)
+      + toNumber(analysis.contingency_reserve, 0);
+
+    const permits = toNumber(analysis.environmental_clearance, 0)
+      + toNumber(analysis.regulatory_permits, 0);
+
+    const items = [
+      { name: "Equipment & Technology", amount: equipmentTech },
+      { name: "Infrastructure", amount: infrastructure },
+      { name: "Land & Site Development", amount: landSite },
+      { name: "Project Development", amount: projectDev },
+      { name: "Permits & Licenses", amount: permits },
     ];
+
+    const total = items.reduce((s, it) => s + it.amount, 0) || 1;
+    return items.map((it) => ({
+      name: it.name,
+      value: Math.round((it.amount / total) * 100),
+      color: resourceColors[it.name],
+      amount: it.amount,
+    }));
   };
 
   const generateFinancialProjectionData = () => {
     const data = [];
-    
-    // Use dynamic values from API response or fallback to defaults
-    const baseAnalysis = analysisData?.base_analysis || {};
-    const initialInvestment = baseAnalysis.total_capex || 375; // Dynamic from API
-    const annualRevenue = baseAnalysis.annual_revenue || 153; // Dynamic from API
-    const annualOpex = baseAnalysis.total_annual_opex || 71; // Dynamic from API
-    const annualProfit = annualRevenue - annualOpex;
+    const summary = analysisData?.summary || {};
+    const comp = analysisData?.comprehensive_analysis || {};
+    const initialInvestment = toNumber(summary.total_investment_crores, 0);
+    const annualRevenue = toNumber(summary.annual_revenue_crores, 0);
+    const annualOpex = toNumber(comp.total_annual_opex, 0);
 
     let cumulativeCashFlow = -initialInvestment;
 
     for (let year = 1; year <= 20; year++) {
-      const revenue = annualRevenue * (1 + (year - 1) * 0.03); // 3% annual growth
-      const opex = annualOpex * (1 + (year - 1) * 0.02); // 2% annual increase
+      const revenue = annualRevenue * Math.pow(1.03, year - 1); // 3% annual growth
+      const opex = annualOpex * Math.pow(1.02, year - 1); // 2% annual increase
       const profit = revenue - opex;
       cumulativeCashFlow += profit;
 
@@ -368,7 +374,7 @@ const FullAnalysisPage = () => {
                       Production Cost
                     </p>
                     <p className="text-2xl font-bold">
-                      ₹{productionMetrics.projected_cost_per_kg}
+                      {productionMetrics.projected_cost_per_kg != null ? `₹${productionMetrics.projected_cost_per_kg}` : "N/A"}
                     </p>
                     <p className="text-xs text-muted-foreground">per kg H₂</p>
                   </div>
@@ -385,7 +391,7 @@ const FullAnalysisPage = () => {
                       Annual Capacity
                     </p>
                     <p className="text-2xl font-bold">
-                      {productionMetrics.annual_capacity_mt}
+                      {productionMetrics.annual_capacity_mt != null ? productionMetrics.annual_capacity_mt : "N/A"}
                     </p>
                     <p className="text-xs text-muted-foreground">MT per year</p>
                   </div>
@@ -402,7 +408,7 @@ const FullAnalysisPage = () => {
                       Expected ROI
                     </p>
                     <p className="text-2xl font-bold">
-                      {productionMetrics.roi_percentage}%
+                      {productionMetrics.roi_percentage != null ? `${productionMetrics.roi_percentage}%` : "N/A"}
                     </p>
                     <p className="text-xs text-muted-foreground">per annum</p>
                   </div>
@@ -1139,26 +1145,17 @@ const FullAnalysisPage = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Equipment & Machinery</span>
-                        <span className="font-medium">₹280 Cr</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Land & Infrastructure</span>
-                        <span className="font-medium">₹45 Cr</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Electrical Systems</span>
-                        <span className="font-medium">₹35 Cr</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Permits & Licenses</span>
-                        <span className="font-medium">₹15 Cr</span>
-                      </div>
+                      {/* Dynamic category totals from analysis */}
+                      {generateResourceAllocationData().map((it) => (
+                        <div key={it.name} className="flex justify-between items-center">
+                          <span className="text-sm">{it.name}</span>
+                          <span className="font-medium">₹{toNumber(it.amount, 0).toFixed(2)} Cr</span>
+                        </div>
+                      ))}
                       <Separator />
                       <div className="flex justify-between items-center font-semibold">
                         <span>Total CAPEX</span>
-                        <span>₹{analysisData?.base_analysis?.total_capex || 375} Cr</span>
+                        <span>₹{toNumber(analysisData?.summary?.total_investment_crores, 0).toFixed(2)} Cr</span>
                       </div>
                     </div>
                   </CardContent>
@@ -1173,27 +1170,43 @@ const FullAnalysisPage = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Electricity</span>
-                        <span className="font-medium">₹45 Cr/year</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Water & Utilities</span>
-                        <span className="font-medium">₹8 Cr/year</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Maintenance</span>
-                        <span className="font-medium">₹12 Cr/year</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Labor & Administration</span>
-                        <span className="font-medium">₹6 Cr/year</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between items-center font-semibold">
-                        <span>Total OPEX</span>
-                        <span>₹71 Cr/year</span>
-                      </div>
+                      {/* Dynamically list key OPEX components if available */}
+                      {analysisData?.comprehensive_analysis ? (
+                        <>
+                          {[
+                            { key: 'electricity_costs', label: 'Electricity' },
+                            { key: 'water_costs', label: 'Water & Utilities' },
+                            { key: 'raw_material_costs', label: 'Raw Materials' },
+                            { key: 'skilled_operators', label: 'Operators' },
+                            { key: 'maintenance_technicians', label: 'Technicians' },
+                            { key: 'engineering_staff', label: 'Engineering Staff' },
+                            { key: 'administrative_staff', label: 'Administration' },
+                            { key: 'electrolyzer_maintenance', label: 'Electrolyzer Maintenance' },
+                            { key: 'equipment_replacement', label: 'Equipment Replacement' },
+                            { key: 'facility_maintenance', label: 'Facility Maintenance' },
+                            { key: 'insurance_costs', label: 'Insurance' },
+                            { key: 'transportation_logistics', label: 'Transport & Logistics' },
+                            { key: 'marketing_sales', label: 'Marketing & Sales' },
+                            { key: 'regulatory_compliance', label: 'Regulatory Compliance' },
+                          ].map(({ key, label }) => {
+                            const val = analysisData.comprehensive_analysis[key];
+                            if (val == null) return null;
+                            return (
+                              <div key={key} className="flex justify-between items-center">
+                                <span className="text-sm">{label}</span>
+                                <span className="font-medium">₹{toNumber(val, 0).toFixed(2)} Cr/year</span>
+                              </div>
+                            );
+                          })}
+                          <Separator />
+                          <div className="flex justify-between items-center font-semibold">
+                            <span>Total OPEX</span>
+                            <span>₹{toNumber(analysisData.comprehensive_analysis.total_annual_opex, 0).toFixed(2)} Cr/year</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">No OPEX data</div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1257,33 +1270,16 @@ const FullAnalysisPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Revenue Streams</CardTitle>
-                    <CardDescription>
-                      Projected annual revenue breakdown
-                    </CardDescription>
+                    <CardTitle>Revenue</CardTitle>
+                    <CardDescription>Projected annual revenue</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Hydrogen Sales</span>
-                        <span className="font-medium">₹125 Cr/year</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Carbon Credits</span>
-                        <span className="font-medium">₹15 Cr/year</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Grid Services</span>
-                        <span className="font-medium">₹8 Cr/year</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Technology Licensing</span>
-                        <span className="font-medium">₹5 Cr/year</span>
-                      </div>
-                      <Separator />
                       <div className="flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
-                        <span>₹153 Cr/year</span>
+                        <span>
+                          ₹{toNumber(analysisData?.summary?.annual_revenue_crores, 0).toFixed(2)} Cr/year
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -1301,21 +1297,26 @@ const FullAnalysisPage = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-sm">Production Cost</span>
                         <span className="font-medium">
-                          ₹{productionMetrics.projected_cost_per_kg}/kg
+                          {productionMetrics.projected_cost_per_kg != null ? `₹${productionMetrics.projected_cost_per_kg}/kg` : 'N/A'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm">Market Price</span>
-                        <span className="font-medium">₹450/kg</span>
+                        <span className="font-medium">
+                          {analysisData?.comprehensive_analysis?.hydrogen_selling_price_per_kg != null
+                            ? `₹${analysisData.comprehensive_analysis.hydrogen_selling_price_per_kg}/kg`
+                            : 'N/A'}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm">Gross Margin</span>
-                        <span className="font-medium text-green-600">22%</span>
+                        <span className="font-medium text-green-600">
+                          {productionMetrics.projected_cost_per_kg != null && analysisData?.comprehensive_analysis?.hydrogen_selling_price_per_kg != null
+                            ? `${Math.round(((analysisData.comprehensive_analysis.hydrogen_selling_price_per_kg - productionMetrics.projected_cost_per_kg) / analysisData.comprehensive_analysis.hydrogen_selling_price_per_kg) * 100)}%`
+                            : 'N/A'}
+                        </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Premium Positioning</span>
-                        <span className="font-medium">+15% above market</span>
-                      </div>
+                      {/* Premium positioning can be modeled later when data available */}
                     </div>
                   </CardContent>
                 </Card>
@@ -1369,7 +1370,7 @@ const FullAnalysisPage = () => {
                   <CardContent>
                     <div className="text-center space-y-2">
                       <p className="text-3xl font-bold text-blue-600">
-                        {productionMetrics.payback_period_years}
+                        {productionMetrics.payback_period_years ?? 'N/A'}
                       </p>
                       <p className="text-sm text-muted-foreground">years</p>
                       <Progress value={75} className="h-2 mt-4" />
@@ -1416,7 +1417,9 @@ const FullAnalysisPage = () => {
                   <CardContent>
                     <div className="text-center space-y-2">
                       <p className="text-3xl font-bold text-purple-600">
-                        ₹450 Cr
+                        {analysisData?.comprehensive_analysis?.npv_10_years != null
+                          ? `₹${toNumber(analysisData.comprehensive_analysis.npv_10_years, 0).toFixed(0)} Cr`
+                          : 'N/A'}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         net present value

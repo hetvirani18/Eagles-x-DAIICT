@@ -51,9 +51,12 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
       });
       
       const data = await response.json();
-      if (data.status === 'success') {
+      if (data && (data.summary || data.comprehensive_analysis)) {
         setAnalysisData(data);
         // Now fetch investment alerts with dynamic capacity
+        await fetchInvestmentAlerts(data);
+      } else if (data.status === 'success') {
+        setAnalysisData(data);
         await fetchInvestmentAlerts(data);
       }
     } catch (error) {
@@ -66,8 +69,8 @@ const AdvancedInvestmentAnalysis = ({ location, onClose }) => {
   const fetchInvestmentAlerts = async (analysisDataParam = null) => {
     try {
       // Use passed analysis data or state analysis data
-      const dataToUse = analysisDataParam || analysisData;
-      const dynamicCapacity = dataToUse?.base_analysis?.optimal_capacity_kg_day || 1000;
+  const dataToUse = analysisDataParam || analysisData;
+  const dynamicCapacity = dataToUse?.summary?.optimal_capacity_kg_day || 1000;
       const response = await fetch(
         `http://localhost:8080/api/v1/advanced/investment-alerts?latitude=${location.lat}&longitude=${location.lng}&capacity_kg_day=${dynamicCapacity}`
       );
