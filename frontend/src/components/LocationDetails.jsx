@@ -400,22 +400,7 @@ const LocationDetails = ({
           </div>
         )}
 
-        <Separator className="bg-border" />
-
-        {/* View Full Analysis Button */}
-        <div className="pt-2">
-          <Button
-            onClick={onViewFullAnalysis}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            size="lg"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            View Full Analysis
-          </Button>
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            Detailed cost-revenue model, projections, and financial analysis
-          </p>
-        </div>
+  <Separator className="bg-border" />
       </CardContent>
     </>
   );
