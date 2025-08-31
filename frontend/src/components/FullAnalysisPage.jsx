@@ -28,6 +28,8 @@ import {
   Award,
   Lightbulb,
   Shield,
+  Gauge,
+  Sun,
   Droplets,
   Globe,
   ArrowLeft,
@@ -871,32 +873,72 @@ const FullAnalysisPage = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Technology
-                        </p>
-                        <p className="text-sm">PEM Electrolyzer</p>
+                    {/* Main Specs */}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Technology Type</p>
+                          <p className="text-sm">{selectedLocation.technology_type || analysisData?.technology_type || "PEM Electrolyzer"}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{selectedLocation.stack_count || analysisData?.stack_count || "4"}-stack system</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Production Capacity</p>
+                          <p className="text-sm">{productionMetrics.annual_capacity_mt} MT/year</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{selectedLocation.daily_capacity || analysisData?.daily_capacity || "6.3"} MT/day</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Capacity
-                        </p>
-                        <p className="text-sm">
-                          {productionMetrics.annual_capacity_mt} MT/year
-                        </p>
+
+                      <Separator />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">System Efficiency</p>
+                          <div className="flex items-center gap-2">
+                            <Progress value={selectedLocation.efficiency || analysisData?.efficiency || 68} className="h-2 w-20" />
+                            <span className="text-sm">{selectedLocation.efficiency || analysisData?.efficiency || "65-70"}%</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{selectedLocation.power_consumption || analysisData?.power_consumption || "4.5"} kWh/Nm³</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Output Quality</p>
+                          <p className="text-sm">{selectedLocation.hydrogen_purity || analysisData?.hydrogen_purity || "99.99"}% pure</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{selectedLocation.output_pressure || analysisData?.output_pressure || "30"} bar pressure</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Efficiency
-                        </p>
-                        <p className="text-sm">65-70%</p>
+
+                      <Separator />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Primary Energy</p>
+                          <p className="text-sm">{selectedLocation.primary_energy || analysisData?.primary_energy || "Solar PV"}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{selectedLocation.solar_capacity || analysisData?.solar_capacity || "60"} MW capacity</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Grid Integration</p>
+                          <p className="text-sm">{selectedLocation.grid_backup || analysisData?.grid_backup || "Green Grid"}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{selectedLocation.grid_renewable || analysisData?.grid_renewable || "80"}% renewable mix</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Energy Source
-                        </p>
-                        <p className="text-sm">Mixed Renewable</p>
+
+                      <Separator />
+
+                      {/* Quick Facts */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-muted/50 rounded-lg p-2 hover:bg-muted/80 transition-colors">
+                          <p className="text-xs text-muted-foreground">Resource Usage</p>
+                          <p className="text-sm font-medium">
+                            {selectedLocation.water_consumption || analysisData?.water_consumption || "9"} L/kg H₂
+                          </p>
+                          <p className="text-xs text-muted-foreground">Water consumption</p>
+                        </div>
+                        <div className="bg-muted/50 rounded-lg p-2 hover:bg-muted/80 transition-colors">
+                          <p className="text-xs text-muted-foreground">Response Time</p>
+                          <p className="text-sm font-medium">
+                            {selectedLocation.response_time || analysisData?.response_time || "<10"} seconds
+                          </p>
+                          <p className="text-xs text-muted-foreground">Load following</p>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
